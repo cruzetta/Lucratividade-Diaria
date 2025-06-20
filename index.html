@@ -49,36 +49,6 @@
             color: #4f46e5;
             font-weight: 600;
         }
-        /* Estilo para notificações (Toast) */
-        #notification-container {
-            position: fixed;
-            bottom: 1rem;
-            left: 50%;
-            transform: translateX(-50%);
-            z-index: 1000;
-            display: flex;
-            flex-direction: column;
-            gap: 0.5rem;
-            align-items: center;
-        }
-        .toast {
-            padding: 0.75rem 1.25rem;
-            border-radius: 0.5rem;
-            color: white;
-            font-weight: 500;
-            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
-            opacity: 0;
-            transform: translateY(20px);
-            transition: opacity 0.3s, transform 0.3s;
-        }
-        .toast.show {
-            opacity: 1;
-            transform: translateY(0);
-        }
-        .toast.info { background-color: #3b82f6; }
-        .toast.success { background-color: #22c55e; }
-        .toast.error { background-color: #ef4444; }
-        .toast.warning { background-color: #f59e0b; }
     </style>
 </head>
 <body class="bg-slate-100 text-slate-800">
@@ -89,10 +59,10 @@
                 <a href="#fechamento" data-page="page-fechamento" class="nav-link text-slate-600 hover:text-indigo-600 font-semibold text-sm sm:text-base">Fechamento do Dia</a>
                 <a href="#cardapio" data-page="page-cardapio" class="nav-link text-slate-600 hover:text-indigo-600 font-semibold text-sm sm:text-base">Cardápio</a>
             </div>
-             <button id="reset-day-btn" class="hidden sm:inline-flex items-center bg-orange-500 text-white font-bold py-2 px-4 rounded-lg hover:bg-orange-600 transition-all transform hover:scale-105">
-                <i data-lucide="refresh-cw" class="h-5 w-5 mr-2"></i>
-                Reiniciar Fechamento
-            </button>
+            <a href="https://wa.me/5567999093031" target="_blank" rel="noopener noreferrer" class="hidden sm:inline-flex items-center bg-green-500 text-white font-bold py-2 px-4 rounded-lg hover:bg-green-600 transition-all transform hover:scale-105">
+                <i data-lucide="message-circle" class="h-5 w-5 mr-2"></i>
+                Fale Comigo
+            </a>
         </nav>
     </header>
 
@@ -114,7 +84,6 @@
                             Área de Fechamento Diário
                         </h2>
                         
-                        <!-- PASSO 1 -->
                         <div id="step-1-container" class="step-container pt-4 border-t">
                             <h3 class="text-xl font-semibold text-slate-700 mb-3 flex items-center">
                                 <span class="bg-indigo-600 text-white rounded-full h-8 w-8 text-lg font-bold flex items-center justify-center mr-3">1</span>
@@ -145,24 +114,22 @@
                             </div>
                         </div>
 
-                        <!-- ALERTA DE ITENS PENDENTES -->
                         <div id="cadastro-pendente-card" class="card border-l-4 border-yellow-400 hidden mt-6">
                             <h2 class="text-2xl font-bold mb-2 text-yellow-600 flex items-center"><i data-lucide="alert-triangle" class="h-8 w-8 mr-3"></i> Ação Necessária: Itens Novos</h2>
                             <p class="text-slate-600 mb-4">Encontramos itens que não estão no cardápio. Cadastre-os para continuar.</p>
                             <div id="cadastro-pendente-list" class="mt-4 space-y-6"></div>
                         </div>
 
-                        <!-- PASSO 2 -->
                          <div id="step-2-container" class="step-container disabled pt-6 border-t mt-6">
                             <h3 class="text-xl font-semibold text-slate-700 mb-3 flex items-center">
                                 <span class="bg-indigo-600 text-white rounded-full h-8 w-8 text-lg font-bold flex items-center justify-center mr-3">2</span> Informar Dados Manuais
                             </h3>
                              <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
                                  <div>
-                                     <label for="itensParaViagemInput" class="block text-sm font-medium text-slate-700">Total de itens (não-bebidas) para viagem/retirada:</label>
-                                     <input type="number" id="itensParaViagemInput" placeholder="0" class="mt-1 block w-full rounded-md border-slate-300 shadow-sm p-2">
+                                    <label for="itensParaViagemInput" class="block text-sm font-medium text-slate-700">Total de itens (não-bebidas) para viagem:</label>
+                                    <input type="number" id="itensParaViagemInput" placeholder="0" class="mt-1 block w-full rounded-md border-slate-300 shadow-sm p-2">
                                  </div>
-                                <div class="card bg-slate-50 p-4">
+                                 <div class="card bg-slate-50 p-4">
                                      <h4 class="text-md font-semibold text-slate-800 flex items-center mb-2"><i data-lucide="users" class="h-4 w-4 mr-2"></i>Custo com Diaristas</h4>
                                      <div class="grid grid-cols-2 gap-2">
                                          <div><label class="text-xs font-medium">Nº</label><input type="number" id="daily-staff-count" placeholder="0" class="w-full p-2 mt-1 border rounded-md text-sm"></div>
@@ -193,7 +160,6 @@
                     </div>
                 </div>
 
-                <!-- Coluna Lateral: Resumo e Configs -->
                 <div class="space-y-8">
                     <div class="card sticky top-20">
                         <h2 class="text-xl font-semibold mb-4 border-b pb-2 text-slate-900 flex items-center"><i data-lucide="bar-chart-2" class="h-5 w-5 mr-3 text-indigo-600"></i>Resumo do Dia</h2>
@@ -288,242 +254,243 @@
                     <div class="flex justify-end gap-4 mt-6 pt-4 border-t">
                         <button id="cancel-import-btn" class="bg-gray-200 text-gray-800 font-semibold py-2 px-4 rounded-md">Cancelar</button>
                         <button id="save-imported-cardapio-btn" class="w-auto bg-blue-600 text-white font-semibold py-2 px-6 rounded-md hover:bg-blue-700">Salvar Cardápio Importado</button>
-                   </div>
+                     </div>
                 </div>
             </div>
         </div>
     </div>
     
-    <!-- Container para Notificações -->
-    <div id="notification-container"></div>
-
     <script>
         document.addEventListener('DOMContentLoaded', () => {
             lucide.createIcons();
             
             // --- ELEMENTOS DA UI ---
-            const ui = {
-                pages: document.querySelectorAll('.page'),
-                navLinks: document.querySelectorAll('.nav-link'),
-                resetDayBtn: document.getElementById('reset-day-btn'),
-                saveConfigBtn: document.getElementById('save-config-btn'),
-                configInputs: {
-                    monthlyExpenses: document.getElementById('config-monthly-expenses'),
-                    workingDays: document.getElementById('config-working-days'),
-                    taxaIfoodPercentual: document.getElementById('config-taxa-ifood-percentual'),
-                    taxaIfoodFixa: document.getElementById('config-taxa-ifood-fixa'),
-                    taxaCartao: document.getElementById('config-taxa-cartao'),
-                    custoAdicionalDelivery: document.getElementById('config-custo-adicional-delivery'),
-                },
-                productForm: {
-                    name: document.getElementById('manual-product-name'),
-                    cost: document.getElementById('manual-product-cost'),
-                    price: document.getElementById('manual-product-price'),
-                    isBebida: document.getElementById('manual-product-is-bebida'),
-                    addBtn: document.getElementById('manual-add-product-btn'),
-                },
-                cardapioListContainer: document.getElementById('cardapio-list-container'),
-                menuCsv: {
-                    input: document.getElementById('daily-menu-csv-input'),
-                    dropZone: document.getElementById('dropZoneCardapio'),
-                    fileName: document.getElementById('fileNameCardapio'),
-                    prepareBtn: document.getElementById('prepare-import-btn'),
-                },
-                importModal: {
-                    container: document.getElementById('import-review-modal'),
-                    tableBody: document.getElementById('import-review-table-body'),
-                    saveBtn: document.getElementById('save-imported-cardapio-btn'),
-                    closeBtn: document.getElementById('close-modal-btn'),
-                    cancelBtn: document.getElementById('cancel-import-btn'),
-                },
-                fechamento: {
-                    step1: document.getElementById('step-1-container'),
-                    step2: document.getElementById('step-2-container'),
-                    pedidos: {
-                        input: document.getElementById('relatorioPedidosInput'),
-                        dropZone: document.getElementById('dropZonePedidos'),
-                        fileName: document.getElementById('fileNamePedidos'),
-                    },
-                    itens: {
-                        input: document.getElementById('relatorioItensInput'),
-                        dropZone: document.getElementById('dropZoneItens'),
-                        fileName: document.getElementById('fileNameItens'),
-                    },
-                    processarBtn: document.getElementById('processarRelatoriosBtn'),
-                    finalizarBtn: document.getElementById('finalizarFechamentoBtn'),
-                    itensViagemInput: document.getElementById('itensParaViagemInput'),
-                    staffCountInput: document.getElementById('daily-staff-count'),
-                    staffCostInput: document.getElementById('daily-staff-cost'),
-                    extraExpense: {
-                        desc: document.getElementById('extra-expense-desc'),
-                        value: document.getElementById('extra-expense-value'),
-                        addBtn: document.getElementById('add-extra-expense-btn'),
-                        listUl: document.getElementById('extra-expenses-list'),
-                    },
-                    summaryContainer: document.getElementById('summary-content'),
-                    cadastroPendente: {
-                        card: document.getElementById('cadastro-pendente-card'),
-                        list: document.getElementById('cadastro-pendente-list'),
-                    }
-                },
-                currentDateDisplay: document.getElementById('current-date-display'),
-                notificationContainer: document.getElementById('notification-container'),
+            const pages = document.querySelectorAll('.page');
+            const navLinks = document.querySelectorAll('.nav-link');
+            const saveConfigBtn = document.getElementById('save-config-btn');
+            const configInputs = {
+                monthlyExpenses: document.getElementById('config-monthly-expenses'),
+                workingDays: document.getElementById('config-working-days'),
+                taxaIfoodPercentual: document.getElementById('config-taxa-ifood-percentual'),
+                taxaIfoodFixa: document.getElementById('config-taxa-ifood-fixa'),
+                taxaCartao: document.getElementById('config-taxa-cartao'),
+                custoAdicionalDelivery: document.getElementById('config-custo-adicional-delivery'),
             };
+            const productForm = {
+                name: document.getElementById('manual-product-name'),
+                cost: document.getElementById('manual-product-cost'),
+                price: document.getElementById('manual-product-price'),
+                isBebida: document.getElementById('manual-product-is-bebida'),
+                addBtn: document.getElementById('manual-add-product-btn'),
+            };
+            const cardapioListContainer = document.getElementById('cardapio-list-container');
+            const menuCsvInput = document.getElementById('daily-menu-csv-input');
+            const prepareImportBtn = document.getElementById('prepare-import-btn');
+            const importReviewModal = document.getElementById('import-review-modal');
+            const importReviewTableBody = document.getElementById('import-review-table-body');
+            const saveImportedCardapioBtn = document.getElementById('save-imported-cardapio-btn');
+            const closeModalBtn = document.getElementById('close-modal-btn');
+            const cancelImportBtn = document.getElementById('cancel-import-btn');
+            const step1Container = document.getElementById('step-1-container');
+            const step2Container = document.getElementById('step-2-container');
+            const relatorioPedidosInput = document.getElementById('relatorioPedidosInput');
+            const relatorioItensInput = document.getElementById('relatorioItensInput');
+            const processarRelatoriosBtn = document.getElementById('processarRelatoriosBtn');
+            const finalizarFechamentoBtn = document.getElementById('finalizarFechamentoBtn');
+            const staffCountInput = document.getElementById('daily-staff-count');
+            const staffCostInput = document.getElementById('daily-staff-cost');
+            const extraExpenseDescInput = document.getElementById('extra-expense-desc');
+            const extraExpenseValueInput = document.getElementById('extra-expense-value');
+            const addExtraExpenseBtn = document.getElementById('add-extra-expense-btn');
+            const extraExpensesListUl = document.getElementById('extra-expenses-list');
+            const summaryContainer = document.getElementById('summary-content');
+            const cadastroPendenteCard = document.getElementById('cadastro-pendente-card');
+            const cadastroPendenteList = document.getElementById('cadastro-pendente-list');
+            
+            document.getElementById('current-date-display').textContent = new Date().toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit', year: 'numeric' });
+            const todayKey = new Date().toISOString().split('T')[0];
+            const STORAGE_KEY = 'hybridClosingData_v12';
 
-            // --- CONSTANTES E ESTADO ---
-            const STORAGE_KEY = 'hybridClosingData_v13';
+            // --- ESTRUTURA DE DADOS E ESTADO ---
             const getDefaultData = () => ({
                 config: {
                     monthlyExpenses: 2000, workingDays: 26, taxaIfoodPercentual: 15.2,
                     taxaIfoodFixa: 0.99, taxaCartao: 3.5, custoAdicionalDelivery: 2.00
                 },
                 cardapio: [],
+                dailyLogs: {}, 
             });
-            let appData = getDefaultData();
-            let sessionData = {
-                pedidoFile: null,
-                itensFile: null,
-                menuFile: null,
-                extraExpenses: [],
-                manualInputs: {},
-            };
-            
-            // --- FUNÇÕES UTILITÁRIAS ---
-            const formatCurrency = (value) => !isNaN(parseFloat(value)) ? parseFloat(value).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' }) : 'R$ 0,00';
-            const parseValue = (value) => parseFloat(String(value).replace(',', '.')) || 0;
-            const showNotification = (message, type = 'info', duration = 3000) => {
-                const toast = document.createElement('div');
-                toast.className = `toast ${type}`;
-                toast.textContent = message;
-                ui.notificationContainer.appendChild(toast);
-                setTimeout(() => toast.classList.add('show'), 10);
-                setTimeout(() => {
-                    toast.classList.remove('show');
-                    toast.addEventListener('transitionend', () => toast.remove());
-                }, duration);
-            };
+            let data = getDefaultData();
+            let pedidoFile = null;
+            let itensFile = null;
+            let menuFile = null;
 
+            // --- FUNÇÕES UTILITÁRIAS ---
+            const formatCurrency = (value) => !isNaN(value) ? value.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' }) : 'R$ 0,00';
+            const parseValue = (value) => parseFloat(String(value).replace(',', '.')) || 0;
+            
             // --- NAVEGAÇÃO ---
             function showPage(pageId) {
-                ui.pages.forEach(p => p.classList.toggle('active', p.id === pageId));
-                ui.navLinks.forEach(link => link.classList.toggle('active', link.dataset.page === pageId));
-                ui.resetDayBtn.style.display = (pageId === 'page-fechamento') ? 'inline-flex' : 'none';
+                pages.forEach(p => p.classList.remove('active'));
+                document.getElementById(pageId)?.classList.add('active');
+                navLinks.forEach(link => {
+                    link.classList.toggle('active', link.dataset.page === pageId);
+                });
                 window.location.hash = pageId.replace('page-','');
             }
 
-            // --- GERENCIAMENTO DE DADOS (localStorage) ---
-            function checkLocalStorage() {
-                try {
-                    const testKey = '_test_ls_';
-                    localStorage.setItem(testKey, testKey);
-                    localStorage.removeItem(testKey);
-                    return true;
-                } catch (e) {
-                    showNotification("O salvamento automático está desativado. Seu navegador pode estar bloqueando-o.", 'error', 10000);
-                    return false;
+            navLinks.forEach(link => link.addEventListener('click', (e) => {
+                e.preventDefault();
+                showPage(link.dataset.page);
+            }));
+
+            // --- LÓGICA DE DRAG & DROP ---
+            function setupDropZone(dropZoneEl, inputEl, fileNameEl, fileSetter, buttonToShow) {
+                const handler = (file) => {
+                    fileSetter(file);
+                    fileNameEl.textContent = file.name;
+                    if(buttonToShow) buttonToShow.classList.remove('hidden');
                 }
+                dropZoneEl.addEventListener('click', () => inputEl.click());
+                ['dragenter', 'dragover', 'dragleave', 'drop'].forEach(eventName => {
+                    dropZoneEl.addEventListener(eventName, e => { e.preventDefault(); e.stopPropagation(); });
+                });
+                ['dragenter', 'dragover'].forEach(eventName => {
+                    dropZoneEl.addEventListener(eventName, () => dropZoneEl.classList.add('drag-over'));
+                });
+                ['dragleave', 'drop'].forEach(eventName => {
+                    dropZoneEl.addEventListener(eventName, () => dropZoneEl.classList.remove('drag-over'));
+                });
+                dropZoneEl.addEventListener('drop', e => {
+                    const files = e.dataTransfer.files;
+                    if (files.length > 0) handler(files[0]);
+                });
+                inputEl.addEventListener('change', e => {
+                    const files = e.target.files;
+                     if (files.length > 0) handler(files[0]);
+                });
             }
 
+             // --- GERENCIAMENTO DE DADOS ---
             function saveData() {
                 try {
-                    localStorage.setItem(STORAGE_KEY, JSON.stringify(appData));
-                } catch (e) {
-                    console.error("Erro ao salvar dados:", e);
-                    showNotification("Erro ao salvar dados no seu navegador.", 'error');
-                }
+                    localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
+                } catch (e) { console.error("Erro ao salvar dados:", e); }
             }
-            
+
             function loadData() {
                 const savedData = localStorage.getItem(STORAGE_KEY);
                 if (savedData) {
                     try {
                         const parsedData = JSON.parse(savedData);
-                        const defaults = getDefaultData();
-                        // Recria o objeto 'appData' de forma segura
-                        appData = {
-                            config: { ...defaults.config, ...(parsedData.config || {}) },
-                            // Garante que o cardapio é um array e reseta o estado de edição
-                            cardapio: Array.isArray(parsedData.cardapio) 
-                                ? parsedData.cardapio.map(p => ({...p, isEditing: false})) 
-                                : [],
-                        };
-                    } catch (e) {
-                        console.error("Erro ao carregar dados salvos:", e);
-                        appData = getDefaultData();
-                        showNotification("Dados salvos corrompidos. Começando do zero.", 'warning');
+                        // Merge com defaults para garantir que o objeto de dados não perca chaves
+                        data.config = { ...getDefaultData().config, ...(parsedData.config || {}) };
+                        data.cardapio = Array.isArray(parsedData.cardapio) ? parsedData.cardapio : [];
+                        data.dailyLogs = typeof parsedData.dailyLogs === 'object' && parsedData.dailyLogs !== null ? parsedData.dailyLogs : {};
+                    } catch (e) { 
+                        console.error("Erro ao carregar dados, usando dados padrão.", e);
+                        data = getDefaultData(); 
                     }
+                } else {
+                    data = getDefaultData();
+                }
+
+                if (!data.dailyLogs[todayKey]) {
+                    data.dailyLogs[todayKey] = { extraExpenses: [], staff: { count: '', cost: '' } };
                 }
                 updateUIFromData();
             }
 
-            // --- RENDERIZAÇÃO E ATUALIZAÇÃO DA UI ---
+            // --- RENDERIZAÇÃO DA UI ---
             function updateUIFromData() {
-                Object.keys(ui.configInputs).forEach(key => {
-                    ui.configInputs[key].value = appData.config[key] || '';
+                Object.keys(configInputs).forEach(key => {
+                    configInputs[key].value = data.config[key] || '';
                 });
                 renderCardapioList();
+                const todayLog = data.dailyLogs[todayKey];
+                staffCountInput.value = todayLog.staff.count;
+                staffCostInput.value = todayLog.staff.cost;
+                renderExtraExpensesList();
+                if(todayLog.summary){
+                    renderSummary(todayLog.summary);
+                }
             }
-
+            
             function renderCardapioItem(p, index) {
-                 const isIfood = p.nome.includes('!');
-                 if (p.isEditing) {
-                     return `
-                         <div class="p-4 bg-indigo-50 rounded-lg border border-indigo-200">
+                const isIfood = p.nome.includes('!');
+                if (p.isEditing) {
+                    return `
+                        <div class="p-4 bg-indigo-50 rounded-lg border border-indigo-200">
                              <div class="grid grid-cols-2 gap-4">
-                                 <div class="col-span-2"><label class="text-sm font-medium">Nome</label><input type="text" data-field="nome" value="${p.nome}" class="w-full p-2 mt-1 border rounded-md"></div>
-                                 <div><label class="text-sm font-medium">Custo (R$)</label><input type="number" data-field="custoProducao" value="${p.custoProducao}" class="w-full p-2 mt-1 border rounded-md"></div>
-                                 <div><label class="text-sm font-medium">Venda (R$)</label><input type="number" data-field="precoVenda" value="${p.precoVenda}" class="w-full p-2 mt-1 border rounded-md"></div>
-                                 <div class="col-span-2 flex items-center"><label class="flex items-center gap-2 text-sm font-medium"><input type="checkbox" data-field="eBebida" ${p.eBebida ? 'checked' : ''} class="h-4 w-4 rounded">É uma bebida?</label></div>
+                                <div class="col-span-2"><label class="text-sm font-medium">Nome</label><input type="text" data-field="nome" value="${p.nome}" class="w-full p-2 mt-1 border rounded-md"></div>
+                                <div><label class="text-sm font-medium">Custo Produção (R$)</label><input type="number" data-field="custoProducao" value="${p.custoProducao}" class="w-full p-2 mt-1 border rounded-md"></div>
+                                <div><label class="text-sm font-medium">Preço Venda (R$)</label><input type="number" data-field="precoVenda" value="${p.precoVenda}" class="w-full p-2 mt-1 border rounded-md"></div>
+                                <div class="col-span-2 flex items-center"><label class="flex items-center gap-2 text-sm font-medium"><input type="checkbox" data-field="eBebida" ${p.eBebida ? 'checked' : ''} class="h-4 w-4 rounded">É uma bebida?</label></div>
                              </div>
                              <div class="mt-4 flex gap-2 justify-end">
-                                 <button class="cancel-edit-btn bg-gray-200 text-gray-800 font-semibold py-2 px-4 rounded-md" data-index="${index}">Cancelar</button>
-                                 <button class="save-edit-btn bg-green-500 text-white font-semibold py-2 px-4 rounded-md" data-index="${index}">Salvar</button>
+                                <button class="cancel-edit-btn bg-gray-200 text-gray-800 font-semibold py-2 px-4 rounded-md" data-index="${index}">Cancelar</button>
+                                <button class="save-edit-btn bg-green-500 text-white font-semibold py-2 px-4 rounded-md" data-index="${index}">Salvar</button>
                              </div>
-                         </div>
-                     `;
-                 } else {
+                        </div>
+                    `;
+                } else {
                      return `
-                         <div class="p-3 bg-white rounded-md border text-sm">
-                             <div class="flex justify-between items-start">
-                                 <div>
-                                     <p class="font-semibold text-base flex items-center gap-2">${p.nome.replace('!', '')} 
-                                         ${isIfood ? '<span class="text-xs bg-red-100 text-red-800 px-2 py-0.5 rounded-full font-bold">iFood</span>' : '<span class="text-xs bg-blue-100 text-blue-800 px-2 py-0.5 rounded-full font-bold">Anota Aí</span>'}
-                                         ${p.eBebida ? '<span class="text-xs font-normal text-gray-500">(Bebida)</span>' : ''}
-                                     </p>
-                                     <p class="text-slate-500 text-xs mt-1">Custo: ${formatCurrency(p.custoProducao)} | Venda: ${formatCurrency(p.precoVenda)}</p>
-                                 </div>
-                                 <div class="flex gap-2">
-                                     <button class="edit-cardapio-item-btn text-blue-500 hover:text-blue-700" data-index="${index}"><i data-lucide="edit" class="h-4 w-4"></i></button>
-                                     <button class="remove-cardapio-item-btn text-red-500 hover:text-red-700" data-index="${index}"><i data-lucide="trash-2" class="h-4 w-4"></i></button>
-                                 </div>
-                             </div>
-                         </div>
-                     `;
-                 }
+                        <div class="p-3 bg-white rounded-md border text-sm">
+                            <div class="flex justify-between items-start">
+                                <div>
+                                    <p class="font-semibold text-base flex items-center gap-2">${p.nome.replace('!', '')} 
+                                        ${isIfood ? '<span class="text-xs bg-red-100 text-red-800 px-2 py-0.5 rounded-full font-bold">iFood</span>' : '<span class="text-xs bg-blue-100 text-blue-800 px-2 py-0.5 rounded-full font-bold">Anota Aí</span>'}
+                                        ${p.eBebida ? '<span class="text-xs font-normal text-gray-500">(Bebida)</span>' : ''}
+                                    </p>
+                                    <p class="text-slate-500 text-xs mt-1">Custo: ${formatCurrency(p.custoProducao)} | Venda: ${formatCurrency(p.precoVenda)}</p>
+                                </div>
+                                <div class="flex gap-2">
+                                    <button class="edit-cardapio-item-btn text-blue-500 hover:text-blue-700" data-index="${index}"><i data-lucide="edit" class="h-4 w-4"></i></button>
+                                    <button class="remove-cardapio-item-btn text-red-500 hover:text-red-700" data-index="${index}"><i data-lucide="trash-2" class="h-4 w-4"></i></button>
+                                </div>
+                            </div>
+                        </div>
+                    `;
+                }
             }
 
+
             function renderCardapioList() {
-                ui.cardapioListContainer.innerHTML = appData.cardapio.length === 0 
-                    ? '<p class="italic text-slate-500 p-2">Nenhum produto cadastrado.</p>' 
-                    : appData.cardapio.map(renderCardapioItem).join('');
+                cardapioListContainer.innerHTML = '';
+                if (data.cardapio.length === 0) {
+                    cardapioListContainer.innerHTML = '<p class="italic text-slate-500 p-2">Nenhum produto cadastrado.</p>';
+                    return;
+                }
+                data.cardapio.forEach((p, index) => {
+                    const div = document.createElement('div');
+                    div.innerHTML = renderCardapioItem(p, index);
+                    cardapioListContainer.appendChild(div);
+                });
                 lucide.createIcons();
             }
 
-            function renderExtraExpensesList() {
-                 ui.fechamento.extraExpense.listUl.innerHTML = sessionData.extraExpenses.length === 0
-                     ? '<li class="italic list-none">Nenhuma despesa extra.</li>'
-                     : sessionData.extraExpenses.map((expense, index) => `
-                         <li class="flex justify-between items-center">
-                             <span>${expense.desc}: ${formatCurrency(expense.value)}</span>
-                             <button class="remove-extra-expense-btn text-red-500 hover:text-red-700" data-index="${index}">
-                                 <i data-lucide="x-circle" class="h-4 w-4"></i>
-                             </button>
-                         </li>`).join('');
-                 lucide.createIcons();
+             function renderExtraExpensesList() {
+                extraExpensesListUl.innerHTML = '<li class="italic list-none">Nenhuma despesa extra.</li>';
+                const todayExtraExpenses = data.dailyLogs[todayKey]?.extraExpenses;
+                if(!todayExtraExpenses || todayExtraExpenses.length === 0) return;
+
+                extraExpensesListUl.innerHTML = '';
+                todayExtraExpenses.forEach((expense, index) => {
+                    const li = document.createElement('li');
+                    li.className = 'flex justify-between items-center';
+                    li.innerHTML = `
+                        <span>${expense.desc}: ${formatCurrency(expense.value)}</span>
+                        <button class="remove-extra-expense-btn text-red-500 hover:text-red-700" data-index="${index}">
+                            <i data-lucide="x-circle" class="h-4 w-4"></i>
+                        </button>
+                    `;
+                    extraExpensesListUl.appendChild(li);
+                });
+                lucide.createIcons();
             }
-            
+
             function renderSummary(summary) {
-                ui.fechamento.summaryContainer.innerHTML = `
+                summaryContainer.innerHTML = `
                     <div class="space-y-2">
                         <div class="flex justify-between items-center p-3 bg-blue-50 rounded-md text-lg">
                             <span class="font-medium text-blue-800">Faturamento Bruto</span>
@@ -544,278 +511,83 @@
                     </div>
                 `;
             }
-
-            function renderItensPendentes(nomes) {
-                 ui.fechamento.cadastroPendente.list.innerHTML = '';
-                 nomes.forEach(nome => {
-                     const formId = `form-${nome.replace(/[^a-zA-Z0-9]/g, '-')}`;
-                     const formHTML = `
-                         <div id="${formId}" class="bg-yellow-50 p-4 rounded-lg border border-yellow-200">
+            
+             function renderItensPendentes(nomes) {
+                cadastroPendenteList.innerHTML = '';
+                nomes.forEach(nome => {
+                    const formId = `form-${nome.replace(/[^a-zA-Z0-9]/g, '-')}`;
+                    const formHTML = `
+                        <div id="${formId}" class="bg-yellow-50 p-4 rounded-lg border border-yellow-200">
                              <h4 class="font-bold text-slate-800">${nome}</h4>
                              <div class="grid grid-cols-2 gap-4 mt-2">
-                                 <div class="col-span-1"><label class="text-sm font-medium">Custo (R$)</label><input type="number" data-field="custo" class="w-full p-2 mt-1 border rounded-md"></div>
-                                 <div class="col-span-1"><label class="text-sm font-medium">Preço (R$)</label><input type="number" data-field="preco" class="w-full p-2 mt-1 border rounded-md"></div>
-                                 <div class="col-span-2"><label class="flex items-center gap-2 text-sm font-medium"><input type="checkbox" data-field="eBebida" class="h-4 w-4 rounded">É uma bebida?</label></div>
+                                <div class="col-span-1"><label class="text-sm font-medium">Custo Produção (R$)</label><input type="number" data-field="custo" class="w-full p-2 mt-1 border rounded-md"></div>
+                                <div class="col-span-1"><label class="text-sm font-medium">Preço Venda (R$)</label><input type="number" data-field="preco" class="w-full p-2 mt-1 border rounded-md"></div>
+                                <div class="col-span-2"><label class="flex items-center gap-2 text-sm font-medium"><input type="checkbox" data-field="eBebida" class="h-4 w-4 rounded">É uma bebida?</label></div>
                              </div>
                              <button class="salvar-item-pendente-btn mt-3 w-full bg-green-500 text-white font-semibold py-2 px-3 rounded-md hover:bg-green-600 text-sm" data-nome="${nome}">Salvar Item</button>
-                         </div>
-                     `;
-                     ui.fechamento.cadastroPendente.list.insertAdjacentHTML('beforeend', formHTML);
-                 });
-                 ui.fechamento.cadastroPendente.card.classList.remove('hidden');
-                 ui.fechamento.step1.classList.add('disabled');
-            }
-
-            // --- LÓGICA DE DRAG & DROP ---
-            function setupDropZone(dropZoneEl, inputEl, fileNameEl, fileSetter, buttonToShow) {
-                const handler = (file) => {
-                    fileSetter(file);
-                    fileNameEl.textContent = file ? file.name : 'Nenhum arquivo.';
-                    if(buttonToShow) buttonToShow.classList.toggle('hidden', !file);
-                }
-                dropZoneEl.addEventListener('click', () => inputEl.click());
-                ['dragenter', 'dragover', 'dragleave', 'drop'].forEach(eventName => {
-                    dropZoneEl.addEventListener(eventName, e => { e.preventDefault(); e.stopPropagation(); });
+                        </div>
+                    `;
+                    cadastroPendenteList.insertAdjacentHTML('beforeend', formHTML);
                 });
-                ['dragenter', 'dragover'].forEach(eventName => {
-                    dropZoneEl.addEventListener(eventName, () => dropZoneEl.classList.add('drag-over'));
-                });
-                ['dragleave', 'drop'].forEach(eventName => {
-                    dropZoneEl.addEventListener(eventName, () => dropZoneEl.classList.remove('drag-over'));
-                });
-                dropZoneEl.addEventListener('drop', e => {
-                    const files = e.dataTransfer.files;
-                    if (files.length > 0) handler(files[0]);
-                });
-                inputEl.addEventListener('change', e => {
-                    handler(e.target.files[0]);
-                });
+                cadastroPendenteCard.classList.remove('hidden');
+                step1Container.classList.add('disabled');
             }
 
             // --- LÓGICA DE NEGÓCIO E EVENTOS ---
 
-            function resetDay() {
-                sessionData = {
-                    pedidoFile: null, itensFile: null, menuFile: null, extraExpenses: [], manualInputs: {},
-                };
-                
-                ui.fechamento.pedidos.fileName.textContent = 'Nenhum arquivo.';
-                ui.fechamento.pedidos.input.value = '';
-                ui.fechamento.itens.fileName.textContent = 'Nenhum arquivo.';
-                ui.fechamento.itens.input.value = '';
-
-                ui.fechamento.itensViagemInput.value = '';
-                ui.fechamento.staffCountInput.value = '';
-                ui.fechamento.staffCostInput.value = '';
-                ui.fechamento.extraExpense.desc.value = '';
-                ui.fechamento.extraExpense.value.value = '';
-
-                renderExtraExpensesList();
-                ui.fechamento.summaryContainer.innerHTML = '<div class="text-center p-4 bg-gray-50 rounded-lg"><p class="text-slate-600">Aguardando dados...</p></div>';
-                
-                ui.fechamento.step1.classList.remove('disabled');
-                ui.fechamento.step2.classList.add('disabled');
-                ui.fechamento.cadastroPendente.card.classList.add('hidden');
-                ui.fechamento.cadastroPendente.list.innerHTML = '';
-                
-                showNotification("Fechamento do dia reiniciado.", 'info');
-            }
-
-            // --- Leitura e Processamento de CSV ---
-            const readFileAsText = file => new Promise((resolve, reject) => {
-                const reader = new FileReader();
-                reader.onload = e => resolve(e.target.result);
-                reader.onerror = e => reject(e);
-                reader.readAsText(file, 'UTF-8');
-            });
-            
-            async function processarRelatorios() {
-                if (!sessionData.itensFile) {
-                    return showNotification("Por favor, importe o 'Relatório de Itens Vendidos'.", 'error');
-                }
-                try {
-                    const itensCSV = await readFileAsText(sessionData.itensFile);
-                    // Normaliza quebras de linha e remove linhas vazias no final
-                    const itensRows = itensCSV.replace(/\r\n/g, '\n').trim().split('\n').slice(1);
-                    const itensNaoEncontrados = new Set();
-                    const cardapioNomes = appData.cardapio.map(p => p.nome.toLowerCase());
-
-                    itensRows.forEach(rowStr => {
-                        const row = rowStr.trim();
-                        if (!row) return;
-                        const columns = row.split(',');
-                        if (columns.length < 1) return;
-                        const nomeItem = columns[0] ? columns[0].trim() : '';
-                        if (!nomeItem) return;
-
-                        if (!cardapioNomes.includes(nomeItem.toLowerCase())) {
-                            itensNaoEncontrados.add(nomeItem);
-                        }
-                    });
-
-                    if (itensNaoEncontrados.size > 0) {
-                        renderItensPendentes(Array.from(itensNaoEncontrados));
-                        showNotification(`${itensNaoEncontrados.size} item(ns) novo(s) encontrado(s).`, 'warning');
-                    } else {
-                        ui.fechamento.step1.classList.add('disabled');
-                        ui.fechamento.step2.classList.remove('disabled');
-                        showNotification("Todos os itens encontrados! Prossiga para os dados manuais.", 'success');
-                    }
-                } catch (err) {
-                    showNotification("Erro ao ler o arquivo de itens.", 'error');
-                    console.error(err);
-                }
-            }
-
-            async function performFinalCalculation() {
-                if (!sessionData.pedidoFile || !sessionData.itensFile) {
-                    return showNotification("Importe os dois relatórios para calcular.", 'error');
-                }
-                
-                try {
-                    const [pedidosCSV, itensCSV] = await Promise.all([
-                        readFileAsText(sessionData.pedidoFile), 
-                        readFileAsText(sessionData.itensFile)
-                    ]);
-                    
-                    // 1. Custo Fixo do Dia
-                    const { config } = appData;
-                    const custoFixoDia = parseValue(config.monthlyExpenses) / (parseInt(config.workingDays, 10) || 1);
-
-                    // 2. Faturamento e Taxas (do Relatório de Pedidos)
-                    const pedidosRows = pedidosCSV.replace(/\r\n/g, '\n').trim().split('\n').slice(1);
-                    let faturamentoBruto = 0, faturamentoIfood = 0, faturamentoCartaoProprio = 0, numPedidosIfood = 0;
-
-                    pedidosRows.forEach(rowStr => {
-                        const row = rowStr.trim();
-                        if (!row) return;
-                        const columns = row.split(',');
-                        if (columns.length < 8) return;
-                        
-                        // COLUNAS: 3=Retirada, 5=Valor, 7=Condição Pagamento, 8=Origem
-                        const valorTotal = parseValue(columns[5]);
-                        const condicaoPagamento = (columns[7] || '').trim().toLowerCase();
-                        const origem = (columns[8] || '').trim();
-
-                        if (!isNaN(valorTotal)) {
-                            faturamentoBruto += valorTotal;
-                            if (origem.toLowerCase() === 'ifood') {
-                                faturamentoIfood += valorTotal;
-                                numPedidosIfood++;
-                            } else if (condicaoPagamento.includes('cartão')) {
-                                faturamentoCartaoProprio += valorTotal;
-                            }
-                        }
-                    });
-
-                    const taxasIfood = (faturamentoIfood * parseValue(config.taxaIfoodPercentual) / 100) + (numPedidosIfood * parseValue(config.taxaIfoodFixa));
-                    const taxasCartao = faturamentoCartaoProprio * parseValue(config.taxaCartao) / 100;
-                    const taxasTotais = taxasIfood + taxasCartao;
-
-                    // 3. CMV (do Relatório de Itens Vendidos)
-                    const itensRows = itensCSV.replace(/\r\n/g, '\n').trim().split('\n').slice(1);
-                    let cmv = 0;
-                    itensRows.forEach(rowStr => {
-                        const row = rowStr.trim();
-                        if (!row) return;
-                        const columns = row.split(',');
-                        if (columns.length < 2) return;
-                        
-                        const nomeItem = (columns[0] || '').trim();
-                        const quantidade = parseInt(columns[1], 10);
-                        if (!nomeItem || isNaN(quantidade)) return;
-
-                        const itemCardapio = appData.cardapio.find(p => p.nome.toLowerCase() === nomeItem.toLowerCase());
-                        if (itemCardapio) {
-                            cmv += quantidade * itemCardapio.custoProducao;
-                        }
-                    });
-
-                    // 4. Custos Manuais
-                    const itensViagem = parseValue(ui.fechamento.itensViagemInput.value);
-                    const custoAdicionalViagem = itensViagem * parseValue(config.custoAdicionalDelivery);
-                    const custoDiaristas = parseValue(ui.fechamento.staffCountInput.value) * parseValue(ui.fechamento.staffCostInput.value);
-                    const custoExtras = sessionData.extraExpenses.reduce((sum, exp) => sum + exp.value, 0);
-
-                    // 5. Lucro/Prejuízo Final
-                    const lucroFinal = faturamentoBruto - cmv - taxasTotais - custoAdicionalViagem - custoFixoDia - custoDiaristas - custoExtras;
-                    
-                    const finalSummary = {
-                        faturamentoBruto, cmv, taxasTotais, custoAdicionalViagem, custoFixoDia, custoDiaristas, custoExtras, lucroFinal
-                    };
-                    
-                    renderSummary(finalSummary);
-                    showNotification("Cálculo finalizado com sucesso!", 'success');
-
-                } catch (err) {
-                    showNotification("Ocorreu um erro ao calcular o resultado final.", 'error');
-                    console.error("Erro no cálculo final:", err);
-                }
-            }
-
-
-            // --- SETUP DOS EVENT LISTENERS ---
-
-            // Navegação
-            ui.navLinks.forEach(link => link.addEventListener('click', (e) => {
-                e.preventDefault();
-                showPage(link.dataset.page);
-            }));
-
-            // Configurações
-            ui.saveConfigBtn.addEventListener('click', () => {
-                Object.keys(ui.configInputs).forEach(key => {
-                    appData.config[key] = ui.configInputs[key].value;
+            saveConfigBtn.addEventListener('click', () => {
+                Object.keys(configInputs).forEach(key => {
+                    data.config[key] = configInputs[key].value;
                 });
                 saveData();
-                showNotification('Configurações salvas!', 'success');
+                const btnText = saveConfigBtn.querySelector('.btn-text');
+                saveConfigBtn.classList.replace('bg-indigo-600', 'bg-green-500');
+                btnText.textContent = 'Salvo!';
+                setTimeout(() => {
+                    saveConfigBtn.classList.replace('bg-green-500', 'bg-indigo-600');
+                    btnText.textContent = 'Salvar';
+                }, 2000);
             });
             
-            ui.resetDayBtn.addEventListener('click', resetDay);
-
-            // Cardápio - Adicionar manual
-            ui.productForm.addBtn.addEventListener('click', () => {
+            productForm.addBtn.addEventListener('click', () => {
                 const newProduct = {
-                    nome: ui.productForm.name.value.trim(),
-                    custoProducao: parseValue(ui.productForm.cost.value),
-                    precoVenda: parseValue(ui.productForm.price.value),
-                    eBebida: ui.productForm.isBebida.checked,
+                    nome: productForm.name.value.trim(),
+                    custoProducao: parseValue(productForm.cost.value),
+                    precoVenda: parseValue(productForm.price.value),
+                    eBebida: productForm.isBebida.checked,
                     isEditing: false
                 };
-                if (!newProduct.nome || !newProduct.custoProducao || !newProduct.precoVenda) {
-                    return showNotification("Preencha Nome, Custo e Preço.", "error");
+                if (!newProduct.nome || !newProduct.custoProducao) {
+                    alert("Preencha pelo menos o Nome e o Custo de Produção."); return;
                 }
-                appData.cardapio.push(newProduct);
-                appData.cardapio.sort((a,b) => a.nome.localeCompare(b.nome));
+                data.cardapio.push(newProduct);
+                data.cardapio.sort((a,b) => a.nome.localeCompare(b.nome));
                 saveData();
                 renderCardapioList();
-                Object.values(ui.productForm).forEach(el => {
-                    if (el.type === 'checkbox') el.checked = false;
-                    else if(el.tagName === 'INPUT') el.value = '';
-                });
-                showNotification("Produto adicionado com sucesso!", "success");
+                productForm.name.value = '';
+                productForm.cost.value = '';
+                productForm.price.value = '';
+                productForm.isBebida.checked = false;
             });
 
-            // Cardápio - Ações na lista (Editar/Remover/Salvar Edição)
-            ui.cardapioListContainer.addEventListener('click', (e) => {
+            cardapioListContainer.addEventListener('click', (e) => {
                 const target = e.target.closest('button');
                 if (!target) return;
                 
                 const index = parseInt(target.dataset.index, 10);
                 
                 if (target.matches('.remove-cardapio-item-btn')) {
-                    if (confirm(`Remover "${appData.cardapio[index].nome}" do cardápio?`)) {
-                        appData.cardapio.splice(index, 1);
+                    if (confirm(`Remover "${data.cardapio[index].nome}" do cardápio?`)) {
+                        data.cardapio.splice(index, 1);
                         saveData();
                         renderCardapioList();
-                        showNotification("Produto removido.", 'info');
                     }
                 } else if (target.matches('.edit-cardapio-item-btn')) {
-                    appData.cardapio.forEach((p, i) => p.isEditing = i === index);
+                    data.cardapio.forEach((p, i) => p.isEditing = i === index);
                     renderCardapioList();
                 } else if (target.matches('.cancel-edit-btn')) {
-                    appData.cardapio[index].isEditing = false;
-                    renderCardapioList();
+                     data.cardapio[index].isEditing = false;
+                     renderCardapioList();
                 } else if (target.matches('.save-edit-btn')) {
                     const itemContainer = target.closest('.p-4');
                     const editedProduct = {
@@ -825,50 +597,62 @@
                         eBebida: itemContainer.querySelector('[data-field="eBebida"]').checked,
                         isEditing: false
                     };
-                    appData.cardapio[index] = editedProduct;
-                    appData.cardapio.sort((a,b) => a.nome.localeCompare(b.nome));
+                    data.cardapio[index] = editedProduct;
+                    data.cardapio.sort((a,b) => a.nome.localeCompare(b.nome));
                     saveData();
                     renderCardapioList();
-                    showNotification("Produto atualizado!", 'success');
                 }
             });
 
-            // Cardápio - Importação
-            ui.menuCsv.prepareBtn.addEventListener('click', () => {
-                if (!sessionData.menuFile) return showNotification("Selecione um arquivo CSV.", "error");
-                readFileAsText(sessionData.menuFile).then(csv => {
-                    const rows = csv.replace(/\r\n/g, '\n').trim().split('\n').slice(1);
-                    ui.importModal.tableBody.innerHTML = '';
-                    rows.forEach(rowStr => {
-                        if (!rowStr.trim()) return;
-                        const columns = rowStr.split(',');
-                        const tr = document.createElement('tr');
-                        tr.className = 'border-b';
-                        tr.innerHTML = `
-                            <td class="p-2"><input type="text" value="${columns[0]?.trim() || ''}" data-field="nome" class="w-full p-1 border rounded-md"></td>
-                            <td class="p-2"><input type="number" value="${parseValue(columns[1])}" data-field="custoProducao" class="w-full p-1 border rounded-md"></td>
-                            <td class="p-2"><input type="number" value="${parseValue(columns[2])}" data-field="precoVenda" class="w-full p-1 border rounded-md"></td>
-                            <td class="p-2 text-center"><input type="checkbox" ${(columns[3]?.trim().toLowerCase() === 'true') ? 'checked' : ''} data-field="eBebida" class="h-4 w-4"></td>
-                        `;
-                        ui.importModal.tableBody.appendChild(tr);
-                    });
-                    ui.importModal.container.classList.remove('hidden');
-                }).catch(err => showNotification("Erro ao ler arquivo.", "error"));
+            prepareImportBtn.addEventListener('click', () => {
+                if (!menuFile) { alert("Por favor, selecione um arquivo CSV para importar."); return; }
+                const reader = new FileReader();
+                reader.onload = (e) => {
+                    try {
+                        const csv = e.target.result;
+                        const rows = csv.split('\n').slice(1);
+                        importReviewTableBody.innerHTML = '';
+                        rows.forEach((rowStr) => {
+                            if (!rowStr.trim()) return;
+                            const columns = rowStr.split(',');
+                            const product = {
+                                nome: columns[0]?.trim() || '',
+                                custoProducao: parseValue(columns[1]),
+                                precoVenda: parseValue(columns[2]),
+                                eBebida: columns[3]?.trim().toLowerCase() === 'true',
+                            };
+                            const tr = document.createElement('tr');
+                            tr.className = 'border-b';
+                            tr.innerHTML = `
+                                <td class="p-2"><input type="text" value="${product.nome}" data-field="nome" class="w-full p-1 border rounded-md"></td>
+                                <td class="p-2"><input type="number" value="${product.custoProducao}" data-field="custoProducao" class="w-full p-1 border rounded-md"></td>
+                                <td class="p-2"><input type="number" value="${product.precoVenda}" data-field="precoVenda" class="w-full p-1 border rounded-md"></td>
+                                <td class="p-2 text-center"><input type="checkbox" ${product.eBebida ? 'checked' : ''} data-field="eBebida" class="h-4 w-4"></td>
+                            `;
+                            importReviewTableBody.appendChild(tr);
+                        });
+                        importReviewModal.classList.remove('hidden');
+                    } catch(err) {
+                        alert("Erro ao preparar a importação.");
+                        console.error(err);
+                    }
+                };
+                reader.readAsText(menuFile);
             });
 
             const closeModal = () => {
-                ui.importModal.container.classList.add('hidden');
-                ui.menuCsv.prepareBtn.classList.add('hidden');
-                ui.menuCsv.fileName.textContent = '';
-                sessionData.menuFile = null;
-                ui.menuCsv.input.value = '';
-            };
-            ui.importModal.closeBtn.addEventListener('click', closeModal);
-            ui.importModal.cancelBtn.addEventListener('click', closeModal);
+                importReviewModal.classList.add('hidden');
+                prepareImportBtn.classList.add('hidden');
+                document.getElementById('fileNameCardapio').textContent = '';
+                menuFile = null;
+            }
 
-            ui.importModal.saveBtn.addEventListener('click', () => {
+            closeModalBtn.addEventListener('click', closeModal);
+            cancelImportBtn.addEventListener('click', closeModal);
+
+            saveImportedCardapioBtn.addEventListener('click', () => {
                 const newProducts = [];
-                const reviewRows = ui.importModal.tableBody.querySelectorAll('tr');
+                const reviewRows = importReviewTableBody.querySelectorAll('tr');
                 reviewRows.forEach(row => {
                     const product = {
                         nome: row.querySelector('[data-field="nome"]').value,
@@ -879,19 +663,141 @@
                     };
                     if (product.nome) newProducts.push(product);
                 });
-                appData.cardapio = newProducts.sort((a,b) => a.nome.localeCompare(b.nome));
+                data.cardapio = newProducts;
+                data.cardapio.sort((a,b) => a.nome.localeCompare(b.nome));
                 saveData();
                 renderCardapioList();
                 closeModal();
-                showNotification("Cardápio importado com sucesso!", "success");
+                alert("Cardápio importado com sucesso!");
             });
             
-            // Fechamento - Fluxo
-            ui.fechamento.processarBtn.addEventListener('click', processarRelatorios);
-            ui.fechamento.finalizarBtn.addEventListener('click', performFinalCalculation);
+            async function processarRelatorios() {
+                if (!pedidoFile || !itensFile) {
+                    alert("Por favor, importe o 'Relatório de Pedidos' e o 'Relatório de Itens Vendidos'.");
+                    return;
+                }
+                const readFile = file => new Promise((resolve, reject) => {
+                    const reader = new FileReader();
+                    reader.onload = e => resolve(e.target.result);
+                    reader.onerror = e => reject(e);
+                    reader.readAsText(file);
+                });
+                try {
+                    const itensCSV = await readFile(itensFile);
+                    const itensRows = itensCSV.split('\n').slice(1);
+                    const itensNaoEncontrados = new Set();
+                    itensRows.forEach(rowStr => {
+                        if (!rowStr.trim()) return;
+                        const columns = rowStr.split(',');
+                        if (columns.length < 2) return;
+                        const nomeItem = columns[0] ? columns[0].trim() : '';
+                        if (!nomeItem) return;
+                        const itemCardapio = data.cardapio.find(p => p.nome.toLowerCase() === nomeItem.toLowerCase());
+                        if (!itemCardapio) {
+                            itensNaoEncontrados.add(nomeItem);
+                        }
+                    });
+                    if (itensNaoEncontrados.size > 0) {
+                        renderItensPendentes(Array.from(itensNaoEncontrados));
+                    } else {
+                        step1Container.classList.add('disabled');
+                        step2Container.classList.remove('disabled');
+                        alert("Relatórios processados! Todos os itens foram encontrados. Prossiga para o Passo 2.");
+                    }
+                } catch (err) {
+                    alert("Erro ao ler os arquivos.");
+                    console.error(err);
+                }
+            }
 
-            // Fechamento - Cadastro Pendente
-            ui.fechamento.cadastroPendente.list.addEventListener('click', (e) => {
+            processarRelatoriosBtn.addEventListener('click', processarRelatorios);
+
+            async function performFinalCalculation() {
+                 if (!pedidoFile || !itensFile) {
+                    alert("Os arquivos de relatório não foram carregados.");
+                    return;
+                }
+                
+                try {
+                    const readFile = file => new Promise((resolve, reject) => {
+                        const reader = new FileReader();
+                        reader.onload = e => resolve(e.target.result);
+                        reader.onerror = e => reject(e);
+                        reader.readAsText(file);
+                    });
+
+                    const [pedidosCSV, itensCSV] = await Promise.all([readFile(pedidoFile), readFile(itensFile)]);
+                    
+                    const pedidosRows = pedidosCSV.split('\n').slice(1);
+                    let faturamentoBrutoDia = 0, faturamentoIfood = 0, faturamentoCartaoProprio = 0;
+                    pedidosRows.forEach(rowStr => {
+                        if (!rowStr.trim()) return;
+                        const columns = rowStr.split(',');
+                        if (columns.length < 8) return;
+                        const valorTotal = parseValue(columns[4]);
+                        const origem = columns[7] ? columns[7].trim() : '';
+                        const condicaoPagamento = columns[6] ? columns[6].trim().toLowerCase() : '';
+                        if (!isNaN(valorTotal)) {
+                            faturamentoBrutoDia += valorTotal;
+                            if (origem === 'iFood') faturamentoIfood += valorTotal;
+                            if (origem !== 'iFood' && condicaoPagamento.includes('cartão')) faturamentoCartaoProprio += valorTotal;
+                        }
+                    });
+                    const totalPedidosIfood = pedidosRows.filter(r => r.split(',')[7]?.trim() === 'iFood').length;
+                    const { taxaIfoodPercentual, taxaIfoodFixa, taxaCartao } = data.config;
+                    const taxasIfood = (faturamentoIfood * parseValue(taxaIfoodPercentual) / 100) + (totalPedidosIfood * parseValue(taxaIfoodFixa));
+                    const taxasCartao = faturamentoCartaoProprio * parseValue(taxaCartao) / 100;
+                    const taxasTotais = taxasIfood + taxasCartao;
+
+                    const itensRows = itensCSV.split('\n').slice(1);
+                    let cmvTotal = 0;
+                    itensRows.forEach(rowStr => {
+                        if (!rowStr.trim()) return;
+                        const columns = rowStr.split(',');
+                        if (columns.length < 2) return;
+                        const nomeItem = columns[0] ? columns[0].trim() : '';
+                        const quantidade = parseInt(columns[1], 10);
+                        if (!nomeItem || isNaN(quantidade)) return;
+                        const itemCardapio = data.cardapio.find(p => p.nome.toLowerCase() === nomeItem.toLowerCase());
+                        if (itemCardapio) cmvTotal += quantidade * itemCardapio.custoProducao;
+                    });
+                    
+                    const itensViagem = parseValue(document.getElementById('itensParaViagemInput').value);
+                    const custoAdicionalTotal = itensViagem * parseValue(data.config.custoAdicionalDelivery);
+                    const custoFixoDia = parseValue(data.config.monthlyExpenses) / (parseInt(data.config.workingDays, 10) || 1);
+                    const custoDiaristas = parseValue(staffCountInput.value) * parseValue(staffCostInput.value);
+                    const custoExtras = data.dailyLogs[todayKey].extraExpenses.reduce((sum, exp) => sum + exp.value, 0);
+                    
+                    const lucroFinal = faturamentoBrutoDia - cmvTotal - taxasTotais - custoAdicionalTotal - custoFixoDia - custoDiaristas - custoExtras;
+                    const finalSummary = {
+                        faturamentoBruto: faturamentoBrutoDia, cmv: cmvTotal, taxasTotais: taxasTotais,
+                        custoAdicionalViagem: custoAdicionalTotal, custoFixoDia: custoFixoDia, custoDiaristas: custoDiaristas,
+                        custoExtras: custoExtras, lucroFinal: lucroFinal,
+                    };
+                    
+                    data.dailyLogs[todayKey].summary = finalSummary;
+                    saveData();
+                    renderSummary(finalSummary);
+
+                } catch (err) {
+                    alert("Ocorreu um erro ao calcular o resultado final.");
+                    console.error("Erro no cálculo final:", err);
+                }
+            }
+            
+            finalizarFechamentoBtn.addEventListener('click', performFinalCalculation);
+
+            document.body.addEventListener('change', (e) => {
+                if (e.target.matches('.canal-chk')) {
+                    const targetId = e.target.dataset.target;
+                    const container = document.getElementById(targetId);
+                    if (container) {
+                        container.classList.toggle('hidden', !e.target.checked);
+                    }
+                }
+            });
+
+            cadastroPendenteList.addEventListener('click', (e) => {
                 const saveBtn = e.target.closest('.salvar-item-pendente-btn');
                 if (!saveBtn) return;
                 
@@ -906,58 +812,60 @@
                 };
 
                 if (!newProduct.custoProducao || !newProduct.precoVenda) {
-                    return showNotification('Informe Custo e Preço de Venda.', 'error');
+                    alert('Por favor, informe o Custo e o Preço de Venda para o item.');
+                    return;
                 }
 
-                appData.cardapio.push(newProduct);
-                appData.cardapio.sort((a,b) => a.nome.localeCompare(b.nome));
+                data.cardapio.push(newProduct);
+                data.cardapio.sort((a,b) => a.nome.localeCompare(b.nome));
                 saveData();
                 renderCardapioList();
                 formContainer.remove();
 
-                if (ui.fechamento.cadastroPendente.list.children.length === 0) {
-                    ui.fechamento.cadastroPendente.card.classList.add('hidden');
-                    ui.fechamento.step2.classList.remove('disabled');
-                    showNotification('Todos os itens pendentes foram cadastrados! Prossiga.', 'success');
+                if (cadastroPendenteList.children.length === 0) {
+                    cadastroPendenteCard.classList.add('hidden');
+                    step1Container.classList.add('disabled');
+                    step2Container.classList.remove('disabled');
+                    alert('Todos os itens pendentes foram cadastrados! Prossiga para o Passo 2.');
                 }
             });
-            
-            // Fechamento - Despesas Extras
-            ui.fechamento.extraExpense.addBtn.addEventListener('click', () => {
-                const desc = ui.fechamento.extraExpense.desc.value.trim();
-                const value = parseValue(ui.fechamento.extraExpense.value.value);
-                if(!desc || value <= 0) return showNotification("Preencha a descrição e um valor válido.", "error");
-                sessionData.extraExpenses.push({ desc, value });
-                renderExtraExpensesList();
-                ui.fechamento.extraExpense.desc.value = '';
-                ui.fechamento.extraExpense.value.value = '';
+
+            [staffCountInput, staffCostInput].forEach(input => {
+                input.addEventListener('change', () => {
+                    data.dailyLogs[todayKey].staff.count = staffCountInput.value;
+                    data.dailyLogs[todayKey].staff.cost = staffCostInput.value;
+                    saveData();
+                });
             });
 
-            ui.fechamento.extraExpense.listUl.addEventListener('click', (e) => {
+            addExtraExpenseBtn.addEventListener('click', () => {
+                const desc = extraExpenseDescInput.value.trim();
+                const value = parseValue(extraExpenseValueInput.value);
+                if(!desc || value <= 0) { alert("Preencha a descrição e um valor válido."); return; }
+                data.dailyLogs[todayKey].extraExpenses.push({ desc, value });
+                saveData(); renderExtraExpensesList();
+                extraExpenseDescInput.value = extraExpenseValueInput.value = '';
+            });
+
+            extraExpensesListUl.addEventListener('click', (e) => {
                 const removeBtn = e.target.closest('.remove-extra-expense-btn');
                 if (removeBtn) {
                     const index = parseInt(removeBtn.dataset.index, 10);
-                    sessionData.extraExpenses.splice(index, 1);
-                    renderExtraExpensesList();
+                    data.dailyLogs[todayKey].extraExpenses.splice(index, 1);
+                    saveData(); renderExtraExpensesList();
                 }
             });
-
-            // --- INICIALIZAÇÃO ---
-            function init() {
-                ui.currentDateDisplay.textContent = new Date().toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit', year: 'numeric' });
-                const initialPage = window.location.hash.replace('#', '') || 'fechamento';
-                checkLocalStorage();
-                showPage(`page-${initialPage}`);
-                loadData();
-                setupDropZone(ui.fechamento.pedidos.dropZone, ui.fechamento.pedidos.input, ui.fechamento.pedidos.fileName, file => { sessionData.pedidoFile = file; });
-                setupDropZone(ui.fechamento.itens.dropZone, ui.fechamento.itens.input, ui.fechamento.itens.fileName, file => { sessionData.itensFile = file; });
-                setupDropZone(ui.menuCsv.dropZone, ui.menuCsv.input, ui.menuCsv.fileName, file => { 
-                    sessionData.menuFile = file;
-                    ui.menuCsv.prepareBtn.classList.remove('hidden');
-                });
-            }
             
-            init();
+            // --- INICIALIZAÇÃO ---
+            const initialPage = window.location.hash.replace('#', '') || 'fechamento';
+            showPage(`page-${initialPage}`);
+            loadData();
+            setupDropZone(document.getElementById('dropZonePedidos'), relatorioPedidosInput, document.getElementById('fileNamePedidos'), file => { pedidoFile = file; });
+            setupDropZone(document.getElementById('dropZoneItens'), relatorioItensInput, document.getElementById('fileNameItens'), file => { itensFile = file; });
+            setupDropZone(document.getElementById('dropZoneCardapio'), menuCsvInput, document.getElementById('fileNameCardapio'), file => { 
+                menuFile = file;
+                prepareImportBtn.classList.remove('hidden');
+             });
         });
     </script>
 </body>
