@@ -1,0 +1,964 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Painel de Fechamento de Caixa</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <script src="https://unpkg.com/lucide@0.379.0/dist/umd/lucide.min.js"></script>
+
+    <style>
+        html { scroll-behavior: smooth; }
+        body { font-family: 'Inter', sans-serif; }
+        section.page { display: none; }
+        section.page.active { display: block; }
+        input[type="number"] { -moz-appearance: textfield; }
+        input[type="number"]::-webkit-outer-spin-button,
+        input[type="number"]::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
+        .card {
+            background-color: white;
+            border-radius: 0.75rem;
+            box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
+            padding: 1.5rem;
+        }
+        .btn-save-feedback { transition: all 0.3s ease; }
+        .drop-zone {
+            transition: background-color 0.2s ease-in-out, border-color 0.2s ease-in-out;
+        }
+        .drop-zone.drag-over {
+            background-color: #e0e7ff;
+            border-color: #6366f1;
+        }
+        details[open] summary .chevron {
+            transform: rotate(180deg);
+        }
+        .step-container.disabled {
+            opacity: 0.5;
+            pointer-events: none;
+        }
+        .nav-link {
+            padding: 0.5rem 1rem;
+            border-radius: 0.5rem;
+            transition: background-color 0.2s, color 0.2s;
+        }
+        .nav-link.active {
+            background-color: #eef2ff;
+            color: #4f46e5;
+            font-weight: 600;
+        }
+        /* Estilo para notificações (Toast) */
+        #notification-container {
+            position: fixed;
+            bottom: 1rem;
+            left: 50%;
+            transform: translateX(-50%);
+            z-index: 1000;
+            display: flex;
+            flex-direction: column;
+            gap: 0.5rem;
+            align-items: center;
+        }
+        .toast {
+            padding: 0.75rem 1.25rem;
+            border-radius: 0.5rem;
+            color: white;
+            font-weight: 500;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+            opacity: 0;
+            transform: translateY(20px);
+            transition: opacity 0.3s, transform 0.3s;
+        }
+        .toast.show {
+            opacity: 1;
+            transform: translateY(0);
+        }
+        .toast.info { background-color: #3b82f6; }
+        .toast.success { background-color: #22c55e; }
+        .toast.error { background-color: #ef4444; }
+        .toast.warning { background-color: #f59e0b; }
+    </style>
+</head>
+<body class="bg-slate-100 text-slate-800">
+
+    <header class="bg-white/80 backdrop-blur-lg shadow-md sticky top-0 z-50">
+        <nav class="container mx-auto px-4 md:px-8 flex justify-between items-center h-16">
+            <div class="flex items-center space-x-2 sm:space-x-4">
+                <a href="#fechamento" data-page="page-fechamento" class="nav-link text-slate-600 hover:text-indigo-600 font-semibold text-sm sm:text-base">Fechamento do Dia</a>
+                <a href="#cardapio" data-page="page-cardapio" class="nav-link text-slate-600 hover:text-indigo-600 font-semibold text-sm sm:text-base">Cardápio</a>
+            </div>
+             <button id="reset-day-btn" class="hidden sm:inline-flex items-center bg-orange-500 text-white font-bold py-2 px-4 rounded-lg hover:bg-orange-600 transition-all transform hover:scale-105">
+                <i data-lucide="refresh-cw" class="h-5 w-5 mr-2"></i>
+                Reiniciar Fechamento
+            </button>
+        </nav>
+    </header>
+
+    <main class="container mx-auto p-4 md:p-8 max-w-7xl">
+
+        <!-- PÁGINA DE FECHAMENTO -->
+        <section id="page-fechamento" class="page">
+            <header class="text-center mb-8">
+                <h1 class="text-3xl md:text-4xl font-bold text-slate-900">Fechamento do Dia (<span id="current-date-display"></span>)</h1>
+                <p class="mt-2 text-md md:text-lg text-slate-600">Siga os passos para um fechamento de caixa rápido e preciso.</p>
+            </header>
+
+            <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+                <!-- Coluna Principal: Ações do Dia -->
+                <div class="lg:col-span-2 space-y-8">
+                    <div class="card">
+                        <h2 class="text-2xl font-bold mb-4 text-slate-800 flex items-center">
+                            <i data-lucide="calculator" class="h-8 w-8 mr-3 text-indigo-600"></i>
+                            Área de Fechamento Diário
+                        </h2>
+                        
+                        <!-- PASSO 1 -->
+                        <div id="step-1-container" class="step-container pt-4 border-t">
+                            <h3 class="text-xl font-semibold text-slate-700 mb-3 flex items-center">
+                                <span class="bg-indigo-600 text-white rounded-full h-8 w-8 text-lg font-bold flex items-center justify-center mr-3">1</span>
+                                Importar Relatórios
+                            </h3>
+                            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                <div>
+                                    <p class="text-sm font-medium text-slate-600 mb-2">Relatório de Pedidos</p>
+                                    <label for="relatorioPedidosInput" id="dropZonePedidos" class="drop-zone flex justify-center w-full px-4 py-5 border-2 border-gray-300 border-dashed rounded-md cursor-pointer hover:border-indigo-400">
+                                        <div class="text-center"><i data-lucide="file-up" class="mx-auto h-10 w-10 text-gray-400"></i><p class="mt-1 text-sm text-gray-600">Arraste ou clique</p></div>
+                                    </label>
+                                    <input type="file" id="relatorioPedidosInput" accept=".csv" class="hidden"/>
+                                    <div id="fileNamePedidos" class="mt-2 text-xs text-center text-slate-500 font-medium">Nenhum arquivo.</div>
+                                </div>
+                                <div>
+                                    <p class="text-sm font-medium text-slate-600 mb-2">Relatório de Itens Vendidos</p>
+                                    <label for="relatorioItensInput" id="dropZoneItens" class="drop-zone flex justify-center w-full px-4 py-5 border-2 border-gray-300 border-dashed rounded-md cursor-pointer hover:border-indigo-400">
+                                        <div class="text-center"><i data-lucide="file-up" class="mx-auto h-10 w-10 text-gray-400"></i><p class="mt-1 text-sm text-gray-600">Arraste ou clique</p></div>
+                                    </label>
+                                    <input type="file" id="relatorioItensInput" accept=".csv" class="hidden"/>
+                                    <div id="fileNameItens" class="mt-2 text-xs text-center text-slate-500 font-medium">Nenhum arquivo.</div>
+                                </div>
+                            </div>
+                             <div class="mt-6 text-right">
+                                <button id="processarRelatoriosBtn" class="bg-indigo-600 text-white font-semibold py-2 px-6 rounded-md hover:bg-indigo-700 flex items-center justify-center ml-auto">
+                                    Processar e Avançar <i data-lucide="arrow-right" class="h-5 w-5 ml-2"></i>
+                                </button>
+                            </div>
+                        </div>
+
+                        <!-- ALERTA DE ITENS PENDENTES -->
+                        <div id="cadastro-pendente-card" class="card border-l-4 border-yellow-400 hidden mt-6">
+                            <h2 class="text-2xl font-bold mb-2 text-yellow-600 flex items-center"><i data-lucide="alert-triangle" class="h-8 w-8 mr-3"></i> Ação Necessária: Itens Novos</h2>
+                            <p class="text-slate-600 mb-4">Encontramos itens que não estão no cardápio. Cadastre-os para continuar.</p>
+                            <div id="cadastro-pendente-list" class="mt-4 space-y-6"></div>
+                        </div>
+
+                        <!-- PASSO 2 -->
+                         <div id="step-2-container" class="step-container disabled pt-6 border-t mt-6">
+                            <h3 class="text-xl font-semibold text-slate-700 mb-3 flex items-center">
+                                <span class="bg-indigo-600 text-white rounded-full h-8 w-8 text-lg font-bold flex items-center justify-center mr-3">2</span> Informar Dados Manuais
+                            </h3>
+                             <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                 <div>
+                                     <label for="itensParaViagemInput" class="block text-sm font-medium text-slate-700">Total de itens (não-bebidas) para viagem/retirada:</label>
+                                     <input type="number" id="itensParaViagemInput" placeholder="0" class="mt-1 block w-full rounded-md border-slate-300 shadow-sm p-2">
+                                 </div>
+                                <div class="card bg-slate-50 p-4">
+                                     <h4 class="text-md font-semibold text-slate-800 flex items-center mb-2"><i data-lucide="users" class="h-4 w-4 mr-2"></i>Custo com Diaristas</h4>
+                                     <div class="grid grid-cols-2 gap-2">
+                                         <div><label class="text-xs font-medium">Nº</label><input type="number" id="daily-staff-count" placeholder="0" class="w-full p-2 mt-1 border rounded-md text-sm"></div>
+                                         <div><label class="text-xs font-medium">Custo/Pessoa</label><input type="number" id="daily-staff-cost" placeholder="100" class="w-full p-2 mt-1 border rounded-md text-sm"></div>
+                                     </div>
+                                 </div>
+                             </div>
+                             <div class="card bg-slate-50 p-4 mt-6">
+                                 <h4 class="text-md font-semibold text-slate-800 flex items-center mb-2"><i data-lucide="plus-circle" class="h-4 w-4 mr-2"></i>Despesas Extras do Dia</h4>
+                                 <div class="grid grid-cols-12 gap-2 items-end">
+                                     <div class="col-span-7"><label class="text-xs font-medium">Descrição</label><input type="text" id="extra-expense-desc" placeholder="Ex: Gelo" class="w-full p-2 mt-1 border rounded-md text-sm"></div>
+                                     <div class="col-span-5"><label class="text-xs font-medium">Valor (R$)</label><input type="number" id="extra-expense-value" placeholder="20.00" class="w-full p-2 mt-1 border rounded-md text-sm"></div>
+                                 </div>
+                                <button id="add-extra-expense-btn" class="w-full mt-3 bg-blue-500 text-white font-semibold py-2 px-3 rounded-md hover:bg-blue-600 text-sm">Adicionar Despesa</button>
+                                 <div class="mt-3">
+                                     <h5 class="font-medium text-slate-800 text-sm">Lançadas:</h5>
+                                     <ul id="extra-expenses-list" class="mt-1 text-xs text-slate-600 list-disc list-inside max-h-20 overflow-y-auto p-2">
+                                         <li class="italic list-none">Nenhuma despesa extra.</li>
+                                     </ul>
+                                 </div>
+                             </div>
+                              <div class="mt-6 text-right">
+                                <button id="finalizarFechamentoBtn" class="bg-green-600 text-white font-bold text-lg py-3 px-8 rounded-lg hover:bg-green-700 transition shadow-lg flex items-center justify-center ml-auto">
+                                    <i data-lucide="check-circle" class="h-6 w-6 mr-3"></i> Calcular Resultado Final
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Coluna Lateral: Resumo e Configs -->
+                <div class="space-y-8">
+                    <div class="card sticky top-20">
+                        <h2 class="text-xl font-semibold mb-4 border-b pb-2 text-slate-900 flex items-center"><i data-lucide="bar-chart-2" class="h-5 w-5 mr-3 text-indigo-600"></i>Resumo do Dia</h2>
+                        <div id="summary-content" class="space-y-3">
+                            <div class="text-center p-4 bg-gray-50 rounded-lg"><p class="text-slate-600">Aguardando dados...</p></div>
+                        </div>
+                    </div>
+                    <div class="card">
+                        <details>
+                            <summary class="cursor-pointer text-xl font-semibold text-slate-900 flex items-center justify-between">
+                                <span><i data-lucide="settings-2" class="h-5 w-5 mr-3 inline-block text-indigo-600"></i>Configurações</span>
+                                <i data-lucide="chevron-down" class="chevron h-5 w-5 transition-transform"></i>
+                            </summary>
+                            <div class="mt-4 pt-4 border-t space-y-4">
+                                <div><label class="block text-sm font-medium">Despesas Fixas Mensais (R$)</label><input type="number" id="config-monthly-expenses" class="mt-1 block w-full p-2 border rounded-md"></div>
+                                <div><label class="block text-sm font-medium">Dias Úteis no Mês</label><input type="number" id="config-working-days" class="mt-1 block w-full p-2 border rounded-md"></div>
+                                <div><label class="block text-sm font-medium">Taxa iFood (%)</label><input type="number" id="config-taxa-ifood-percentual" class="mt-1 block w-full p-2 border rounded-md"></div>
+                                <div><label class="block text-sm font-medium">Taxa Fixa iFood (R$)</label><input type="number" id="config-taxa-ifood-fixa" class="mt-1 block w-full p-2 border rounded-md"></div>
+                                <div><label class="block text-sm font-medium">Taxa Cartão (Canais Próprios, %)</label><input type="number" id="config-taxa-cartao" class="mt-1 block w-full p-2 border rounded-md"></div>
+                                <div><label class="block text-sm font-medium">Custo Adicional por Item para Viagem (R$)</label><input type="number" id="config-custo-adicional-delivery" class="mt-1 block w-full p-2 border rounded-md"></div>
+                                <div class="text-right mt-6"><button id="save-config-btn" class="bg-indigo-600 text-white font-semibold py-2 px-4 rounded-md hover:bg-indigo-700 flex items-center justify-center ml-auto btn-save-feedback"><i data-lucide="save" class="h-5 w-5 mr-2"></i><span class="btn-text">Salvar</span></button></div>
+                            </div>
+                        </details>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- PÁGINA DO CARDÁPIO -->
+        <section id="page-cardapio" class="page">
+             <header class="text-center mb-8">
+                <h1 class="text-3xl md:text-4xl font-bold text-slate-900">Gerenciamento do Cardápio</h1>
+                <p class="mt-2 text-md md:text-lg text-slate-600">Adicione, edite e organize todos os seus produtos e preços.</p>
+            </header>
+            <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+                <div class="lg:col-span-2 card">
+                    <h2 class="text-2xl font-semibold mb-4 border-b pb-2">Produtos Carregados</h2>
+                     <div id="cardapio-list-container" class="mt-2 text-sm text-slate-600 max-h-[70vh] overflow-y-auto p-2 space-y-2"></div>
+                </div>
+                <div class="space-y-8">
+                    <div class="card">
+                        <h2 class="text-2xl font-semibold mb-4 border-b pb-2">Adicionar Novo Produto</h2>
+                         <div class="space-y-4">
+                            <div><label class="text-sm font-medium">Nome do Produto <span class="text-xs text-gray-500">(use "!" no final para iFood)</span></label><input type="text" id="manual-product-name" class="w-full p-2 mt-1 border rounded-md"></div>
+                            <div><label class="text-sm font-medium">Custo de Produção (R$)</label><input type="number" id="manual-product-cost" class="w-full p-2 mt-1 border rounded-md"></div>
+                             <div><label class="text-sm font-medium">Preço de Venda (R$)</label><input type="number" id="manual-product-price" class="w-full p-2 mt-1 border rounded-md"></div>
+                            <div class="pt-2"><label class="flex items-center gap-2 text-sm font-medium"><input type="checkbox" id="manual-product-is-bebida" class="h-4 w-4 rounded">É uma bebida?</label></div>
+                        </div>
+                        <button id="manual-add-product-btn" class="w-full mt-4 bg-green-500 text-white font-semibold py-2 px-4 rounded-md hover:bg-green-600">Salvar Produto</button>
+                    </div>
+                     <div class="card">
+                        <h2 class="text-2xl font-semibold mb-4 border-b pb-2">Importar em Massa</h2>
+                        <label for="daily-menu-csv-input" id="dropZoneCardapio" class="drop-zone mt-2 flex justify-center w-full px-6 py-5 border-2 border-gray-300 border-dashed rounded-md cursor-pointer hover:border-indigo-400">
+                            <div class="space-y-1 text-center"><i data-lucide="upload-cloud" class="mx-auto h-12 w-12 text-gray-400"></i><p class="mt-1 text-sm text-gray-600">Arraste ou clique</p></div>
+                        </label>
+                        <input type="file" id="daily-menu-csv-input" class="hidden" accept=".csv">
+                        <div id="fileNameCardapio" class="mt-2 text-sm text-center text-slate-600 font-medium"></div>
+                         <button id="prepare-import-btn" class="w-full mt-4 bg-indigo-500 text-white font-semibold py-2 px-4 rounded-md hover:bg-indigo-600 hidden">Revisar e Preparar Importação</button>
+                    </div>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <!-- Modal de Revisão de Importação -->
+    <div id="import-review-modal" class="hidden fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-50">
+        <div class="relative top-10 mx-auto p-5 border w-full max-w-4xl shadow-lg rounded-md bg-white">
+            <div class="mt-3">
+                <div class="flex justify-between items-center pb-3 border-b">
+                    <h3 class="text-2xl font-bold text-slate-800">Revisão da Importação</h3>
+                    <button id="close-modal-btn" class="cursor-pointer z-50 p-2 -mr-2">
+                        <i data-lucide="x" class="h-6 w-6"></i>
+                    </button>
+                </div>
+                <div class="mt-4">
+                    <p class="text-sm text-slate-600 mb-4">Ajuste os valores detectados no arquivo CSV conforme necessário antes de salvar o novo cardápio. Linhas com nome em branco serão ignoradas.</p>
+                    <div id="import-review-table-container" class="w-full max-h-[60vh] overflow-auto">
+                        <table class="w-full text-sm text-left">
+                            <thead class="bg-slate-100 sticky top-0">
+                                <tr>
+                                    <th class="p-2 w-3/6">Nome do Produto</th>
+                                    <th class="p-2">Custo Prod.</th>
+                                    <th class="p-2">Preço Venda</th>
+                                    <th class="p-2 text-center">É Bebida?</th>
+                                </tr>
+                            </thead>
+                            <tbody id="import-review-table-body">
+                                <!-- Conteúdo gerado via JS -->
+                            </tbody>
+                        </table>
+                    </div>
+                    <div class="flex justify-end gap-4 mt-6 pt-4 border-t">
+                        <button id="cancel-import-btn" class="bg-gray-200 text-gray-800 font-semibold py-2 px-4 rounded-md">Cancelar</button>
+                        <button id="save-imported-cardapio-btn" class="w-auto bg-blue-600 text-white font-semibold py-2 px-6 rounded-md hover:bg-blue-700">Salvar Cardápio Importado</button>
+                   </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Container para Notificações -->
+    <div id="notification-container"></div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            lucide.createIcons();
+            
+            // --- ELEMENTOS DA UI ---
+            const ui = {
+                pages: document.querySelectorAll('.page'),
+                navLinks: document.querySelectorAll('.nav-link'),
+                resetDayBtn: document.getElementById('reset-day-btn'),
+                saveConfigBtn: document.getElementById('save-config-btn'),
+                configInputs: {
+                    monthlyExpenses: document.getElementById('config-monthly-expenses'),
+                    workingDays: document.getElementById('config-working-days'),
+                    taxaIfoodPercentual: document.getElementById('config-taxa-ifood-percentual'),
+                    taxaIfoodFixa: document.getElementById('config-taxa-ifood-fixa'),
+                    taxaCartao: document.getElementById('config-taxa-cartao'),
+                    custoAdicionalDelivery: document.getElementById('config-custo-adicional-delivery'),
+                },
+                productForm: {
+                    name: document.getElementById('manual-product-name'),
+                    cost: document.getElementById('manual-product-cost'),
+                    price: document.getElementById('manual-product-price'),
+                    isBebida: document.getElementById('manual-product-is-bebida'),
+                    addBtn: document.getElementById('manual-add-product-btn'),
+                },
+                cardapioListContainer: document.getElementById('cardapio-list-container'),
+                menuCsv: {
+                    input: document.getElementById('daily-menu-csv-input'),
+                    dropZone: document.getElementById('dropZoneCardapio'),
+                    fileName: document.getElementById('fileNameCardapio'),
+                    prepareBtn: document.getElementById('prepare-import-btn'),
+                },
+                importModal: {
+                    container: document.getElementById('import-review-modal'),
+                    tableBody: document.getElementById('import-review-table-body'),
+                    saveBtn: document.getElementById('save-imported-cardapio-btn'),
+                    closeBtn: document.getElementById('close-modal-btn'),
+                    cancelBtn: document.getElementById('cancel-import-btn'),
+                },
+                fechamento: {
+                    step1: document.getElementById('step-1-container'),
+                    step2: document.getElementById('step-2-container'),
+                    pedidos: {
+                        input: document.getElementById('relatorioPedidosInput'),
+                        dropZone: document.getElementById('dropZonePedidos'),
+                        fileName: document.getElementById('fileNamePedidos'),
+                    },
+                    itens: {
+                        input: document.getElementById('relatorioItensInput'),
+                        dropZone: document.getElementById('dropZoneItens'),
+                        fileName: document.getElementById('fileNameItens'),
+                    },
+                    processarBtn: document.getElementById('processarRelatoriosBtn'),
+                    finalizarBtn: document.getElementById('finalizarFechamentoBtn'),
+                    itensViagemInput: document.getElementById('itensParaViagemInput'),
+                    staffCountInput: document.getElementById('daily-staff-count'),
+                    staffCostInput: document.getElementById('daily-staff-cost'),
+                    extraExpense: {
+                        desc: document.getElementById('extra-expense-desc'),
+                        value: document.getElementById('extra-expense-value'),
+                        addBtn: document.getElementById('add-extra-expense-btn'),
+                        listUl: document.getElementById('extra-expenses-list'),
+                    },
+                    summaryContainer: document.getElementById('summary-content'),
+                    cadastroPendente: {
+                        card: document.getElementById('cadastro-pendente-card'),
+                        list: document.getElementById('cadastro-pendente-list'),
+                    }
+                },
+                currentDateDisplay: document.getElementById('current-date-display'),
+                notificationContainer: document.getElementById('notification-container'),
+            };
+
+            // --- CONSTANTES E ESTADO ---
+            const STORAGE_KEY = 'hybridClosingData_v13';
+            const getDefaultData = () => ({
+                config: {
+                    monthlyExpenses: 2000, workingDays: 26, taxaIfoodPercentual: 15.2,
+                    taxaIfoodFixa: 0.99, taxaCartao: 3.5, custoAdicionalDelivery: 2.00
+                },
+                cardapio: [],
+            });
+            let appData = getDefaultData();
+            let sessionData = {
+                pedidoFile: null,
+                itensFile: null,
+                menuFile: null,
+                extraExpenses: [],
+                manualInputs: {},
+            };
+            
+            // --- FUNÇÕES UTILITÁRIAS ---
+            const formatCurrency = (value) => !isNaN(parseFloat(value)) ? parseFloat(value).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' }) : 'R$ 0,00';
+            const parseValue = (value) => parseFloat(String(value).replace(',', '.')) || 0;
+            const showNotification = (message, type = 'info', duration = 3000) => {
+                const toast = document.createElement('div');
+                toast.className = `toast ${type}`;
+                toast.textContent = message;
+                ui.notificationContainer.appendChild(toast);
+                setTimeout(() => toast.classList.add('show'), 10);
+                setTimeout(() => {
+                    toast.classList.remove('show');
+                    toast.addEventListener('transitionend', () => toast.remove());
+                }, duration);
+            };
+
+            // --- NAVEGAÇÃO ---
+            function showPage(pageId) {
+                ui.pages.forEach(p => p.classList.toggle('active', p.id === pageId));
+                ui.navLinks.forEach(link => link.classList.toggle('active', link.dataset.page === pageId));
+                ui.resetDayBtn.style.display = (pageId === 'page-fechamento') ? 'inline-flex' : 'none';
+                window.location.hash = pageId.replace('page-','');
+            }
+
+            // --- GERENCIAMENTO DE DADOS (localStorage) ---
+            function checkLocalStorage() {
+                try {
+                    const testKey = '_test_ls_';
+                    localStorage.setItem(testKey, testKey);
+                    localStorage.removeItem(testKey);
+                    return true;
+                } catch (e) {
+                    showNotification("O salvamento automático está desativado. Seu navegador pode estar bloqueando-o.", 'error', 10000);
+                    return false;
+                }
+            }
+
+            function saveData() {
+                try {
+                    localStorage.setItem(STORAGE_KEY, JSON.stringify(appData));
+                } catch (e) {
+                    console.error("Erro ao salvar dados:", e);
+                    showNotification("Erro ao salvar dados no seu navegador.", 'error');
+                }
+            }
+            
+            function loadData() {
+                const savedData = localStorage.getItem(STORAGE_KEY);
+                if (savedData) {
+                    try {
+                        const parsedData = JSON.parse(savedData);
+                        const defaults = getDefaultData();
+                        // Recria o objeto 'appData' de forma segura
+                        appData = {
+                            config: { ...defaults.config, ...(parsedData.config || {}) },
+                            // Garante que o cardapio é um array e reseta o estado de edição
+                            cardapio: Array.isArray(parsedData.cardapio) 
+                                ? parsedData.cardapio.map(p => ({...p, isEditing: false})) 
+                                : [],
+                        };
+                    } catch (e) {
+                        console.error("Erro ao carregar dados salvos:", e);
+                        appData = getDefaultData();
+                        showNotification("Dados salvos corrompidos. Começando do zero.", 'warning');
+                    }
+                }
+                updateUIFromData();
+            }
+
+            // --- RENDERIZAÇÃO E ATUALIZAÇÃO DA UI ---
+            function updateUIFromData() {
+                Object.keys(ui.configInputs).forEach(key => {
+                    ui.configInputs[key].value = appData.config[key] || '';
+                });
+                renderCardapioList();
+            }
+
+            function renderCardapioItem(p, index) {
+                 const isIfood = p.nome.includes('!');
+                 if (p.isEditing) {
+                     return `
+                         <div class="p-4 bg-indigo-50 rounded-lg border border-indigo-200">
+                             <div class="grid grid-cols-2 gap-4">
+                                 <div class="col-span-2"><label class="text-sm font-medium">Nome</label><input type="text" data-field="nome" value="${p.nome}" class="w-full p-2 mt-1 border rounded-md"></div>
+                                 <div><label class="text-sm font-medium">Custo (R$)</label><input type="number" data-field="custoProducao" value="${p.custoProducao}" class="w-full p-2 mt-1 border rounded-md"></div>
+                                 <div><label class="text-sm font-medium">Venda (R$)</label><input type="number" data-field="precoVenda" value="${p.precoVenda}" class="w-full p-2 mt-1 border rounded-md"></div>
+                                 <div class="col-span-2 flex items-center"><label class="flex items-center gap-2 text-sm font-medium"><input type="checkbox" data-field="eBebida" ${p.eBebida ? 'checked' : ''} class="h-4 w-4 rounded">É uma bebida?</label></div>
+                             </div>
+                             <div class="mt-4 flex gap-2 justify-end">
+                                 <button class="cancel-edit-btn bg-gray-200 text-gray-800 font-semibold py-2 px-4 rounded-md" data-index="${index}">Cancelar</button>
+                                 <button class="save-edit-btn bg-green-500 text-white font-semibold py-2 px-4 rounded-md" data-index="${index}">Salvar</button>
+                             </div>
+                         </div>
+                     `;
+                 } else {
+                     return `
+                         <div class="p-3 bg-white rounded-md border text-sm">
+                             <div class="flex justify-between items-start">
+                                 <div>
+                                     <p class="font-semibold text-base flex items-center gap-2">${p.nome.replace('!', '')} 
+                                         ${isIfood ? '<span class="text-xs bg-red-100 text-red-800 px-2 py-0.5 rounded-full font-bold">iFood</span>' : '<span class="text-xs bg-blue-100 text-blue-800 px-2 py-0.5 rounded-full font-bold">Anota Aí</span>'}
+                                         ${p.eBebida ? '<span class="text-xs font-normal text-gray-500">(Bebida)</span>' : ''}
+                                     </p>
+                                     <p class="text-slate-500 text-xs mt-1">Custo: ${formatCurrency(p.custoProducao)} | Venda: ${formatCurrency(p.precoVenda)}</p>
+                                 </div>
+                                 <div class="flex gap-2">
+                                     <button class="edit-cardapio-item-btn text-blue-500 hover:text-blue-700" data-index="${index}"><i data-lucide="edit" class="h-4 w-4"></i></button>
+                                     <button class="remove-cardapio-item-btn text-red-500 hover:text-red-700" data-index="${index}"><i data-lucide="trash-2" class="h-4 w-4"></i></button>
+                                 </div>
+                             </div>
+                         </div>
+                     `;
+                 }
+            }
+
+            function renderCardapioList() {
+                ui.cardapioListContainer.innerHTML = appData.cardapio.length === 0 
+                    ? '<p class="italic text-slate-500 p-2">Nenhum produto cadastrado.</p>' 
+                    : appData.cardapio.map(renderCardapioItem).join('');
+                lucide.createIcons();
+            }
+
+            function renderExtraExpensesList() {
+                 ui.fechamento.extraExpense.listUl.innerHTML = sessionData.extraExpenses.length === 0
+                     ? '<li class="italic list-none">Nenhuma despesa extra.</li>'
+                     : sessionData.extraExpenses.map((expense, index) => `
+                         <li class="flex justify-between items-center">
+                             <span>${expense.desc}: ${formatCurrency(expense.value)}</span>
+                             <button class="remove-extra-expense-btn text-red-500 hover:text-red-700" data-index="${index}">
+                                 <i data-lucide="x-circle" class="h-4 w-4"></i>
+                             </button>
+                         </li>`).join('');
+                 lucide.createIcons();
+            }
+            
+            function renderSummary(summary) {
+                ui.fechamento.summaryContainer.innerHTML = `
+                    <div class="space-y-2">
+                        <div class="flex justify-between items-center p-3 bg-blue-50 rounded-md text-lg">
+                            <span class="font-medium text-blue-800">Faturamento Bruto</span>
+                            <span class="font-bold text-blue-900">${formatCurrency(summary.faturamentoBruto)}</span>
+                        </div>
+                        <div class="text-sm space-y-1 pl-2">
+                            <div class="flex justify-between items-center"><span class="text-orange-700">(-) Custo dos Produtos (CMV)</span><span class="font-medium">${formatCurrency(summary.cmv)}</span></div>
+                            <div class="flex justify-between items-center"><span class="text-orange-700">(-) Taxas de Canais e Pag.</span><span class="font-medium">${formatCurrency(summary.taxasTotais)}</span></div>
+                            <div class="flex justify-between items-center"><span class="text-orange-700">(-) Custo Adicional Viagem</span><span class="font-medium">${formatCurrency(summary.custoAdicionalViagem)}</span></div>
+                            <div class="flex justify-between items-center"><span class="text-orange-700">(-) Custo Fixo do Dia</span><span class="font-medium">${formatCurrency(summary.custoFixoDia)}</span></div>
+                            <div class="flex justify-between items-center"><span class="text-orange-700">(-) Custo com Diaristas</span><span class="font-medium">${formatCurrency(summary.custoDiaristas)}</span></div>
+                            <div class="flex justify-between items-center"><span class="text-orange-700">(-) Despesas Extras</span><span class="font-medium">${formatCurrency(summary.custoExtras)}</span></div>
+                        </div>
+                        <div class="p-4 rounded-lg text-center transition-colors duration-300 mt-3 ${summary.lucroFinal >= 0 ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'}">
+                            <p class="text-lg font-bold uppercase">(=) Resultado Final do Dia</p>
+                            <p class="text-4xl font-extrabold mt-1">${formatCurrency(summary.lucroFinal)}</p>
+                        </div>
+                    </div>
+                `;
+            }
+
+            function renderItensPendentes(nomes) {
+                 ui.fechamento.cadastroPendente.list.innerHTML = '';
+                 nomes.forEach(nome => {
+                     const formId = `form-${nome.replace(/[^a-zA-Z0-9]/g, '-')}`;
+                     const formHTML = `
+                         <div id="${formId}" class="bg-yellow-50 p-4 rounded-lg border border-yellow-200">
+                             <h4 class="font-bold text-slate-800">${nome}</h4>
+                             <div class="grid grid-cols-2 gap-4 mt-2">
+                                 <div class="col-span-1"><label class="text-sm font-medium">Custo (R$)</label><input type="number" data-field="custo" class="w-full p-2 mt-1 border rounded-md"></div>
+                                 <div class="col-span-1"><label class="text-sm font-medium">Preço (R$)</label><input type="number" data-field="preco" class="w-full p-2 mt-1 border rounded-md"></div>
+                                 <div class="col-span-2"><label class="flex items-center gap-2 text-sm font-medium"><input type="checkbox" data-field="eBebida" class="h-4 w-4 rounded">É uma bebida?</label></div>
+                             </div>
+                             <button class="salvar-item-pendente-btn mt-3 w-full bg-green-500 text-white font-semibold py-2 px-3 rounded-md hover:bg-green-600 text-sm" data-nome="${nome}">Salvar Item</button>
+                         </div>
+                     `;
+                     ui.fechamento.cadastroPendente.list.insertAdjacentHTML('beforeend', formHTML);
+                 });
+                 ui.fechamento.cadastroPendente.card.classList.remove('hidden');
+                 ui.fechamento.step1.classList.add('disabled');
+            }
+
+            // --- LÓGICA DE DRAG & DROP ---
+            function setupDropZone(dropZoneEl, inputEl, fileNameEl, fileSetter, buttonToShow) {
+                const handler = (file) => {
+                    fileSetter(file);
+                    fileNameEl.textContent = file ? file.name : 'Nenhum arquivo.';
+                    if(buttonToShow) buttonToShow.classList.toggle('hidden', !file);
+                }
+                dropZoneEl.addEventListener('click', () => inputEl.click());
+                ['dragenter', 'dragover', 'dragleave', 'drop'].forEach(eventName => {
+                    dropZoneEl.addEventListener(eventName, e => { e.preventDefault(); e.stopPropagation(); });
+                });
+                ['dragenter', 'dragover'].forEach(eventName => {
+                    dropZoneEl.addEventListener(eventName, () => dropZoneEl.classList.add('drag-over'));
+                });
+                ['dragleave', 'drop'].forEach(eventName => {
+                    dropZoneEl.addEventListener(eventName, () => dropZoneEl.classList.remove('drag-over'));
+                });
+                dropZoneEl.addEventListener('drop', e => {
+                    const files = e.dataTransfer.files;
+                    if (files.length > 0) handler(files[0]);
+                });
+                inputEl.addEventListener('change', e => {
+                    handler(e.target.files[0]);
+                });
+            }
+
+            // --- LÓGICA DE NEGÓCIO E EVENTOS ---
+
+            function resetDay() {
+                sessionData = {
+                    pedidoFile: null, itensFile: null, menuFile: null, extraExpenses: [], manualInputs: {},
+                };
+                
+                ui.fechamento.pedidos.fileName.textContent = 'Nenhum arquivo.';
+                ui.fechamento.pedidos.input.value = '';
+                ui.fechamento.itens.fileName.textContent = 'Nenhum arquivo.';
+                ui.fechamento.itens.input.value = '';
+
+                ui.fechamento.itensViagemInput.value = '';
+                ui.fechamento.staffCountInput.value = '';
+                ui.fechamento.staffCostInput.value = '';
+                ui.fechamento.extraExpense.desc.value = '';
+                ui.fechamento.extraExpense.value.value = '';
+
+                renderExtraExpensesList();
+                ui.fechamento.summaryContainer.innerHTML = '<div class="text-center p-4 bg-gray-50 rounded-lg"><p class="text-slate-600">Aguardando dados...</p></div>';
+                
+                ui.fechamento.step1.classList.remove('disabled');
+                ui.fechamento.step2.classList.add('disabled');
+                ui.fechamento.cadastroPendente.card.classList.add('hidden');
+                ui.fechamento.cadastroPendente.list.innerHTML = '';
+                
+                showNotification("Fechamento do dia reiniciado.", 'info');
+            }
+
+            // --- Leitura e Processamento de CSV ---
+            const readFileAsText = file => new Promise((resolve, reject) => {
+                const reader = new FileReader();
+                reader.onload = e => resolve(e.target.result);
+                reader.onerror = e => reject(e);
+                reader.readAsText(file, 'UTF-8');
+            });
+            
+            async function processarRelatorios() {
+                if (!sessionData.itensFile) {
+                    return showNotification("Por favor, importe o 'Relatório de Itens Vendidos'.", 'error');
+                }
+                try {
+                    const itensCSV = await readFileAsText(sessionData.itensFile);
+                    // Normaliza quebras de linha e remove linhas vazias no final
+                    const itensRows = itensCSV.replace(/\r\n/g, '\n').trim().split('\n').slice(1);
+                    const itensNaoEncontrados = new Set();
+                    const cardapioNomes = appData.cardapio.map(p => p.nome.toLowerCase());
+
+                    itensRows.forEach(rowStr => {
+                        const row = rowStr.trim();
+                        if (!row) return;
+                        const columns = row.split(',');
+                        if (columns.length < 1) return;
+                        const nomeItem = columns[0] ? columns[0].trim() : '';
+                        if (!nomeItem) return;
+
+                        if (!cardapioNomes.includes(nomeItem.toLowerCase())) {
+                            itensNaoEncontrados.add(nomeItem);
+                        }
+                    });
+
+                    if (itensNaoEncontrados.size > 0) {
+                        renderItensPendentes(Array.from(itensNaoEncontrados));
+                        showNotification(`${itensNaoEncontrados.size} item(ns) novo(s) encontrado(s).`, 'warning');
+                    } else {
+                        ui.fechamento.step1.classList.add('disabled');
+                        ui.fechamento.step2.classList.remove('disabled');
+                        showNotification("Todos os itens encontrados! Prossiga para os dados manuais.", 'success');
+                    }
+                } catch (err) {
+                    showNotification("Erro ao ler o arquivo de itens.", 'error');
+                    console.error(err);
+                }
+            }
+
+            async function performFinalCalculation() {
+                if (!sessionData.pedidoFile || !sessionData.itensFile) {
+                    return showNotification("Importe os dois relatórios para calcular.", 'error');
+                }
+                
+                try {
+                    const [pedidosCSV, itensCSV] = await Promise.all([
+                        readFileAsText(sessionData.pedidoFile), 
+                        readFileAsText(sessionData.itensFile)
+                    ]);
+                    
+                    // 1. Custo Fixo do Dia
+                    const { config } = appData;
+                    const custoFixoDia = parseValue(config.monthlyExpenses) / (parseInt(config.workingDays, 10) || 1);
+
+                    // 2. Faturamento e Taxas (do Relatório de Pedidos)
+                    const pedidosRows = pedidosCSV.replace(/\r\n/g, '\n').trim().split('\n').slice(1);
+                    let faturamentoBruto = 0, faturamentoIfood = 0, faturamentoCartaoProprio = 0, numPedidosIfood = 0;
+
+                    pedidosRows.forEach(rowStr => {
+                        const row = rowStr.trim();
+                        if (!row) return;
+                        const columns = row.split(',');
+                        if (columns.length < 8) return;
+                        
+                        // COLUNAS: 3=Retirada, 5=Valor, 7=Condição Pagamento, 8=Origem
+                        const valorTotal = parseValue(columns[5]);
+                        const condicaoPagamento = (columns[7] || '').trim().toLowerCase();
+                        const origem = (columns[8] || '').trim();
+
+                        if (!isNaN(valorTotal)) {
+                            faturamentoBruto += valorTotal;
+                            if (origem.toLowerCase() === 'ifood') {
+                                faturamentoIfood += valorTotal;
+                                numPedidosIfood++;
+                            } else if (condicaoPagamento.includes('cartão')) {
+                                faturamentoCartaoProprio += valorTotal;
+                            }
+                        }
+                    });
+
+                    const taxasIfood = (faturamentoIfood * parseValue(config.taxaIfoodPercentual) / 100) + (numPedidosIfood * parseValue(config.taxaIfoodFixa));
+                    const taxasCartao = faturamentoCartaoProprio * parseValue(config.taxaCartao) / 100;
+                    const taxasTotais = taxasIfood + taxasCartao;
+
+                    // 3. CMV (do Relatório de Itens Vendidos)
+                    const itensRows = itensCSV.replace(/\r\n/g, '\n').trim().split('\n').slice(1);
+                    let cmv = 0;
+                    itensRows.forEach(rowStr => {
+                        const row = rowStr.trim();
+                        if (!row) return;
+                        const columns = row.split(',');
+                        if (columns.length < 2) return;
+                        
+                        const nomeItem = (columns[0] || '').trim();
+                        const quantidade = parseInt(columns[1], 10);
+                        if (!nomeItem || isNaN(quantidade)) return;
+
+                        const itemCardapio = appData.cardapio.find(p => p.nome.toLowerCase() === nomeItem.toLowerCase());
+                        if (itemCardapio) {
+                            cmv += quantidade * itemCardapio.custoProducao;
+                        }
+                    });
+
+                    // 4. Custos Manuais
+                    const itensViagem = parseValue(ui.fechamento.itensViagemInput.value);
+                    const custoAdicionalViagem = itensViagem * parseValue(config.custoAdicionalDelivery);
+                    const custoDiaristas = parseValue(ui.fechamento.staffCountInput.value) * parseValue(ui.fechamento.staffCostInput.value);
+                    const custoExtras = sessionData.extraExpenses.reduce((sum, exp) => sum + exp.value, 0);
+
+                    // 5. Lucro/Prejuízo Final
+                    const lucroFinal = faturamentoBruto - cmv - taxasTotais - custoAdicionalViagem - custoFixoDia - custoDiaristas - custoExtras;
+                    
+                    const finalSummary = {
+                        faturamentoBruto, cmv, taxasTotais, custoAdicionalViagem, custoFixoDia, custoDiaristas, custoExtras, lucroFinal
+                    };
+                    
+                    renderSummary(finalSummary);
+                    showNotification("Cálculo finalizado com sucesso!", 'success');
+
+                } catch (err) {
+                    showNotification("Ocorreu um erro ao calcular o resultado final.", 'error');
+                    console.error("Erro no cálculo final:", err);
+                }
+            }
+
+
+            // --- SETUP DOS EVENT LISTENERS ---
+
+            // Navegação
+            ui.navLinks.forEach(link => link.addEventListener('click', (e) => {
+                e.preventDefault();
+                showPage(link.dataset.page);
+            }));
+
+            // Configurações
+            ui.saveConfigBtn.addEventListener('click', () => {
+                Object.keys(ui.configInputs).forEach(key => {
+                    appData.config[key] = ui.configInputs[key].value;
+                });
+                saveData();
+                showNotification('Configurações salvas!', 'success');
+            });
+            
+            ui.resetDayBtn.addEventListener('click', resetDay);
+
+            // Cardápio - Adicionar manual
+            ui.productForm.addBtn.addEventListener('click', () => {
+                const newProduct = {
+                    nome: ui.productForm.name.value.trim(),
+                    custoProducao: parseValue(ui.productForm.cost.value),
+                    precoVenda: parseValue(ui.productForm.price.value),
+                    eBebida: ui.productForm.isBebida.checked,
+                    isEditing: false
+                };
+                if (!newProduct.nome || !newProduct.custoProducao || !newProduct.precoVenda) {
+                    return showNotification("Preencha Nome, Custo e Preço.", "error");
+                }
+                appData.cardapio.push(newProduct);
+                appData.cardapio.sort((a,b) => a.nome.localeCompare(b.nome));
+                saveData();
+                renderCardapioList();
+                Object.values(ui.productForm).forEach(el => {
+                    if (el.type === 'checkbox') el.checked = false;
+                    else if(el.tagName === 'INPUT') el.value = '';
+                });
+                showNotification("Produto adicionado com sucesso!", "success");
+            });
+
+            // Cardápio - Ações na lista (Editar/Remover/Salvar Edição)
+            ui.cardapioListContainer.addEventListener('click', (e) => {
+                const target = e.target.closest('button');
+                if (!target) return;
+                
+                const index = parseInt(target.dataset.index, 10);
+                
+                if (target.matches('.remove-cardapio-item-btn')) {
+                    if (confirm(`Remover "${appData.cardapio[index].nome}" do cardápio?`)) {
+                        appData.cardapio.splice(index, 1);
+                        saveData();
+                        renderCardapioList();
+                        showNotification("Produto removido.", 'info');
+                    }
+                } else if (target.matches('.edit-cardapio-item-btn')) {
+                    appData.cardapio.forEach((p, i) => p.isEditing = i === index);
+                    renderCardapioList();
+                } else if (target.matches('.cancel-edit-btn')) {
+                    appData.cardapio[index].isEditing = false;
+                    renderCardapioList();
+                } else if (target.matches('.save-edit-btn')) {
+                    const itemContainer = target.closest('.p-4');
+                    const editedProduct = {
+                        nome: itemContainer.querySelector('[data-field="nome"]').value,
+                        custoProducao: parseValue(itemContainer.querySelector('[data-field="custoProducao"]').value),
+                        precoVenda: parseValue(itemContainer.querySelector('[data-field="precoVenda"]').value),
+                        eBebida: itemContainer.querySelector('[data-field="eBebida"]').checked,
+                        isEditing: false
+                    };
+                    appData.cardapio[index] = editedProduct;
+                    appData.cardapio.sort((a,b) => a.nome.localeCompare(b.nome));
+                    saveData();
+                    renderCardapioList();
+                    showNotification("Produto atualizado!", 'success');
+                }
+            });
+
+            // Cardápio - Importação
+            ui.menuCsv.prepareBtn.addEventListener('click', () => {
+                if (!sessionData.menuFile) return showNotification("Selecione um arquivo CSV.", "error");
+                readFileAsText(sessionData.menuFile).then(csv => {
+                    const rows = csv.replace(/\r\n/g, '\n').trim().split('\n').slice(1);
+                    ui.importModal.tableBody.innerHTML = '';
+                    rows.forEach(rowStr => {
+                        if (!rowStr.trim()) return;
+                        const columns = rowStr.split(',');
+                        const tr = document.createElement('tr');
+                        tr.className = 'border-b';
+                        tr.innerHTML = `
+                            <td class="p-2"><input type="text" value="${columns[0]?.trim() || ''}" data-field="nome" class="w-full p-1 border rounded-md"></td>
+                            <td class="p-2"><input type="number" value="${parseValue(columns[1])}" data-field="custoProducao" class="w-full p-1 border rounded-md"></td>
+                            <td class="p-2"><input type="number" value="${parseValue(columns[2])}" data-field="precoVenda" class="w-full p-1 border rounded-md"></td>
+                            <td class="p-2 text-center"><input type="checkbox" ${(columns[3]?.trim().toLowerCase() === 'true') ? 'checked' : ''} data-field="eBebida" class="h-4 w-4"></td>
+                        `;
+                        ui.importModal.tableBody.appendChild(tr);
+                    });
+                    ui.importModal.container.classList.remove('hidden');
+                }).catch(err => showNotification("Erro ao ler arquivo.", "error"));
+            });
+
+            const closeModal = () => {
+                ui.importModal.container.classList.add('hidden');
+                ui.menuCsv.prepareBtn.classList.add('hidden');
+                ui.menuCsv.fileName.textContent = '';
+                sessionData.menuFile = null;
+                ui.menuCsv.input.value = '';
+            };
+            ui.importModal.closeBtn.addEventListener('click', closeModal);
+            ui.importModal.cancelBtn.addEventListener('click', closeModal);
+
+            ui.importModal.saveBtn.addEventListener('click', () => {
+                const newProducts = [];
+                const reviewRows = ui.importModal.tableBody.querySelectorAll('tr');
+                reviewRows.forEach(row => {
+                    const product = {
+                        nome: row.querySelector('[data-field="nome"]').value,
+                        custoProducao: parseValue(row.querySelector('[data-field="custoProducao"]').value),
+                        precoVenda: parseValue(row.querySelector('[data-field="precoVenda"]').value),
+                        eBebida: row.querySelector('[data-field="eBebida"]').checked,
+                        isEditing: false,
+                    };
+                    if (product.nome) newProducts.push(product);
+                });
+                appData.cardapio = newProducts.sort((a,b) => a.nome.localeCompare(b.nome));
+                saveData();
+                renderCardapioList();
+                closeModal();
+                showNotification("Cardápio importado com sucesso!", "success");
+            });
+            
+            // Fechamento - Fluxo
+            ui.fechamento.processarBtn.addEventListener('click', processarRelatorios);
+            ui.fechamento.finalizarBtn.addEventListener('click', performFinalCalculation);
+
+            // Fechamento - Cadastro Pendente
+            ui.fechamento.cadastroPendente.list.addEventListener('click', (e) => {
+                const saveBtn = e.target.closest('.salvar-item-pendente-btn');
+                if (!saveBtn) return;
+                
+                const formContainer = saveBtn.parentElement;
+                const nome = saveBtn.dataset.nome;
+                const newProduct = {
+                    nome: nome,
+                    custoProducao: parseValue(formContainer.querySelector('[data-field="custo"]').value),
+                    precoVenda: parseValue(formContainer.querySelector('[data-field="preco"]').value),
+                    eBebida: formContainer.querySelector('[data-field="eBebida"]').checked,
+                    isEditing: false
+                };
+
+                if (!newProduct.custoProducao || !newProduct.precoVenda) {
+                    return showNotification('Informe Custo e Preço de Venda.', 'error');
+                }
+
+                appData.cardapio.push(newProduct);
+                appData.cardapio.sort((a,b) => a.nome.localeCompare(b.nome));
+                saveData();
+                renderCardapioList();
+                formContainer.remove();
+
+                if (ui.fechamento.cadastroPendente.list.children.length === 0) {
+                    ui.fechamento.cadastroPendente.card.classList.add('hidden');
+                    ui.fechamento.step2.classList.remove('disabled');
+                    showNotification('Todos os itens pendentes foram cadastrados! Prossiga.', 'success');
+                }
+            });
+            
+            // Fechamento - Despesas Extras
+            ui.fechamento.extraExpense.addBtn.addEventListener('click', () => {
+                const desc = ui.fechamento.extraExpense.desc.value.trim();
+                const value = parseValue(ui.fechamento.extraExpense.value.value);
+                if(!desc || value <= 0) return showNotification("Preencha a descrição e um valor válido.", "error");
+                sessionData.extraExpenses.push({ desc, value });
+                renderExtraExpensesList();
+                ui.fechamento.extraExpense.desc.value = '';
+                ui.fechamento.extraExpense.value.value = '';
+            });
+
+            ui.fechamento.extraExpense.listUl.addEventListener('click', (e) => {
+                const removeBtn = e.target.closest('.remove-extra-expense-btn');
+                if (removeBtn) {
+                    const index = parseInt(removeBtn.dataset.index, 10);
+                    sessionData.extraExpenses.splice(index, 1);
+                    renderExtraExpensesList();
+                }
+            });
+
+            // --- INICIALIZAÇÃO ---
+            function init() {
+                ui.currentDateDisplay.textContent = new Date().toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit', year: 'numeric' });
+                const initialPage = window.location.hash.replace('#', '') || 'fechamento';
+                checkLocalStorage();
+                showPage(`page-${initialPage}`);
+                loadData();
+                setupDropZone(ui.fechamento.pedidos.dropZone, ui.fechamento.pedidos.input, ui.fechamento.pedidos.fileName, file => { sessionData.pedidoFile = file; });
+                setupDropZone(ui.fechamento.itens.dropZone, ui.fechamento.itens.input, ui.fechamento.itens.fileName, file => { sessionData.itensFile = file; });
+                setupDropZone(ui.menuCsv.dropZone, ui.menuCsv.input, ui.menuCsv.fileName, file => { 
+                    sessionData.menuFile = file;
+                    ui.menuCsv.prepareBtn.classList.remove('hidden');
+                });
+            }
+            
+            init();
+        });
+    </script>
+</body>
+</html>
