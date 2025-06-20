@@ -118,7 +118,7 @@
                         <div id="step-1-container" class="step-container pt-4 border-t">
                             <h3 class="text-xl font-semibold text-slate-700 mb-3 flex items-center">
                                 <span class="bg-indigo-600 text-white rounded-full h-8 w-8 text-lg font-bold flex items-center justify-center mr-3">1</span>
-                                Importar Relatórios
+                                Importar Relatórios & Vendas Manuais
                             </h3>
                             <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
                                 <div>
@@ -138,6 +138,26 @@
                                     <div id="fileNameItens" class="mt-2 text-xs text-center text-slate-500 font-medium">Nenhum arquivo.</div>
                                 </div>
                             </div>
+
+                            <div class="card bg-slate-50 p-4 mt-6">
+                                <h4 class="text-md font-semibold text-slate-800 flex items-center mb-2"><i data-lucide="hand-coins" class="h-4 w-4 mr-2"></i>Adicionar Item Vendido Manualmente</h4>
+                                <div class="grid grid-cols-12 gap-2 items-end">
+                                    <div class="col-span-8">
+                                        <label class="text-xs font-medium">Nome do Item</label>
+                                        <input type="text" id="manual-item-name" list="cardapio-datalist" placeholder="Digite para buscar..." class="w-full p-2 mt-1 border rounded-md text-sm">
+                                        <datalist id="cardapio-datalist"></datalist>
+                                    </div>
+                                    <div class="col-span-4"><label class="text-xs font-medium">Quantidade</label><input type="number" id="manual-item-quantity" placeholder="1" class="w-full p-2 mt-1 border rounded-md text-sm"></div>
+                                </div>
+                                <button id="add-manual-item-btn" class="w-full mt-3 bg-blue-500 text-white font-semibold py-2 px-3 rounded-md hover:bg-blue-600 text-sm">Adicionar Item</button>
+                                <div class="mt-3">
+                                    <h5 class="font-medium text-slate-800 text-sm">Itens Manuais Adicionados:</h5>
+                                    <ul id="manual-items-list" class="mt-1 text-xs text-slate-600 list-disc list-inside max-h-20 overflow-y-auto p-2">
+                                        <li class="italic list-none">Nenhum item manual.</li>
+                                    </ul>
+                                </div>
+                           </div>
+
                              <div class="mt-6 text-right">
                                 <button id="processarRelatoriosBtn" class="bg-indigo-600 text-white font-semibold py-2 px-6 rounded-md hover:bg-indigo-700 flex items-center justify-center ml-auto">
                                     Processar e Avançar <i data-lucide="arrow-right" class="h-5 w-5 ml-2"></i>
@@ -157,33 +177,33 @@
                             <h3 class="text-xl font-semibold text-slate-700 mb-3 flex items-center">
                                 <span class="bg-indigo-600 text-white rounded-full h-8 w-8 text-lg font-bold flex items-center justify-center mr-3">2</span> Informar Dados Manuais
                             </h3>
-                             <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-                                 <div>
-                                     <label for="itensParaViagemInput" class="block text-sm font-medium text-slate-700">Total de itens (não-bebidas) para viagem/retirada:</label>
-                                     <input type="number" id="itensParaViagemInput" placeholder="0" class="mt-1 block w-full rounded-md border-slate-300 shadow-sm p-2">
-                                 </div>
-                                <div class="card bg-slate-50 p-4">
-                                     <h4 class="text-md font-semibold text-slate-800 flex items-center mb-2"><i data-lucide="users" class="h-4 w-4 mr-2"></i>Custo com Diaristas</h4>
-                                     <div class="grid grid-cols-2 gap-2">
-                                         <div><label class="text-xs font-medium">Nº</label><input type="number" id="daily-staff-count" placeholder="0" class="w-full p-2 mt-1 border rounded-md text-sm"></div>
-                                         <div><label class="text-xs font-medium">Custo/Pessoa</label><input type="number" id="daily-staff-cost" placeholder="100" class="w-full p-2 mt-1 border rounded-md text-sm"></div>
-                                     </div>
-                                 </div>
-                             </div>
-                             <div class="card bg-slate-50 p-4 mt-6">
-                                 <h4 class="text-md font-semibold text-slate-800 flex items-center mb-2"><i data-lucide="plus-circle" class="h-4 w-4 mr-2"></i>Despesas Extras do Dia</h4>
-                                 <div class="grid grid-cols-12 gap-2 items-end">
-                                     <div class="col-span-7"><label class="text-xs font-medium">Descrição</label><input type="text" id="extra-expense-desc" placeholder="Ex: Gelo" class="w-full p-2 mt-1 border rounded-md text-sm"></div>
-                                     <div class="col-span-5"><label class="text-xs font-medium">Valor (R$)</label><input type="number" id="extra-expense-value" placeholder="20.00" class="w-full p-2 mt-1 border rounded-md text-sm"></div>
-                                 </div>
-                                <button id="add-extra-expense-btn" class="w-full mt-3 bg-blue-500 text-white font-semibold py-2 px-3 rounded-md hover:bg-blue-600 text-sm">Adicionar Despesa</button>
-                                 <div class="mt-3">
-                                     <h5 class="font-medium text-slate-800 text-sm">Lançadas:</h5>
-                                     <ul id="extra-expenses-list" class="mt-1 text-xs text-slate-600 list-disc list-inside max-h-20 overflow-y-auto p-2">
-                                         <li class="italic list-none">Nenhuma despesa extra.</li>
-                                     </ul>
-                                 </div>
-                             </div>
+                            <div>
+                                <label for="taxaServicoInput" class="block text-sm font-medium text-slate-700">Valor Total da Taxa de Serviço (R$)</label>
+                                <input type="number" id="taxaServicoInput" placeholder="0.00" class="mt-1 block w-full rounded-md border-slate-300 shadow-sm p-2">
+                            </div>
+                            
+                            <div class="card bg-slate-50 p-4 mt-6">
+                                <h4 class="text-md font-semibold text-slate-800 flex items-center mb-2"><i data-lucide="users" class="h-4 w-4 mr-2"></i>Custo com Diaristas</h4>
+                                <div class="grid grid-cols-2 gap-2">
+                                    <div><label class="text-xs font-medium">Nº</label><input type="number" id="daily-staff-count" placeholder="0" class="w-full p-2 mt-1 border rounded-md text-sm"></div>
+                                    <div><label class="text-xs font-medium">Custo/Pessoa</label><input type="number" id="daily-staff-cost" placeholder="100" class="w-full p-2 mt-1 border rounded-md text-sm"></div>
+                                </div>
+                            </div>
+
+                            <div class="card bg-slate-50 p-4 mt-6">
+                                <h4 class="text-md font-semibold text-slate-800 flex items-center mb-2"><i data-lucide="plus-circle" class="h-4 w-4 mr-2"></i>Despesas Extras do Dia</h4>
+                                <div class="grid grid-cols-12 gap-2 items-end">
+                                    <div class="col-span-7"><label class="text-xs font-medium">Descrição</label><input type="text" id="extra-expense-desc" placeholder="Ex: Gelo" class="w-full p-2 mt-1 border rounded-md text-sm"></div>
+                                    <div class="col-span-5"><label class="text-xs font-medium">Valor (R$)</label><input type="number" id="extra-expense-value" placeholder="20.00" class="w-full p-2 mt-1 border rounded-md text-sm"></div>
+                                </div>
+                               <button id="add-extra-expense-btn" class="w-full mt-3 bg-red-500 text-white font-semibold py-2 px-3 rounded-md hover:bg-red-600 text-sm">Adicionar Despesa</button>
+                                <div class="mt-3">
+                                    <h5 class="font-medium text-slate-800 text-sm">Lançadas:</h5>
+                                    <ul id="extra-expenses-list" class="mt-1 text-xs text-slate-600 list-disc list-inside max-h-20 overflow-y-auto p-2">
+                                        <li class="italic list-none">Nenhuma despesa extra.</li>
+                                    </ul>
+                                </div>
+                           </div>
                               <div class="mt-6 text-right">
                                 <button id="finalizarFechamentoBtn" class="bg-green-600 text-white font-bold text-lg py-3 px-8 rounded-lg hover:bg-green-700 transition shadow-lg flex items-center justify-center ml-auto">
                                     <i data-lucide="check-circle" class="h-6 w-6 mr-3"></i> Calcular Resultado Final
@@ -294,6 +314,29 @@
         </div>
     </div>
     
+    <!-- Modal para Itens de Viagem -->
+    <div id="takeaway-items-modal" class="hidden fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-50">
+        <div class="relative top-10 mx-auto p-5 border w-full max-w-2xl shadow-lg rounded-md bg-white">
+            <div class="mt-3">
+                <div class="flex justify-between items-center pb-3 border-b">
+                    <h3 class="text-2xl font-bold text-slate-800">Confirmar Itens para Viagem</h3>
+                    <button id="close-takeaway-modal-btn" class="cursor-pointer z-50 p-2 -mr-2">
+                        <i data-lucide="x" class="h-6 w-6"></i>
+                    </button>
+                </div>
+                <div class="mt-4">
+                    <p class="text-sm text-slate-600 mb-4">Informe quantas unidades de cada item (não-bebida) foram para viagem ou retirada para calcular o custo de embalagem.</p>
+                    <div id="takeaway-items-list" class="w-full max-h-[60vh] overflow-auto space-y-3">
+                        <!-- Conteúdo gerado via JS -->
+                    </div>
+                    <div class="flex justify-end gap-4 mt-6 pt-4 border-t">
+                        <button id="confirm-takeaway-btn" class="w-auto bg-green-600 text-white font-semibold py-2 px-6 rounded-md hover:bg-green-700">Confirmar e Calcular</button>
+                   </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <!-- Container para Notificações -->
     <div id="notification-container"></div>
 
@@ -323,6 +366,7 @@
                     addBtn: document.getElementById('manual-add-product-btn'),
                 },
                 cardapioListContainer: document.getElementById('cardapio-list-container'),
+                cardapioDatalist: document.getElementById('cardapio-datalist'),
                 menuCsv: {
                     input: document.getElementById('daily-menu-csv-input'),
                     dropZone: document.getElementById('dropZoneCardapio'),
@@ -335,6 +379,12 @@
                     saveBtn: document.getElementById('save-imported-cardapio-btn'),
                     closeBtn: document.getElementById('close-modal-btn'),
                     cancelBtn: document.getElementById('cancel-import-btn'),
+                },
+                takeawayModal: {
+                    container: document.getElementById('takeaway-items-modal'),
+                    list: document.getElementById('takeaway-items-list'),
+                    confirmBtn: document.getElementById('confirm-takeaway-btn'),
+                    closeBtn: document.getElementById('close-takeaway-modal-btn'),
                 },
                 fechamento: {
                     step1: document.getElementById('step-1-container'),
@@ -349,9 +399,15 @@
                         dropZone: document.getElementById('dropZoneItens'),
                         fileName: document.getElementById('fileNameItens'),
                     },
+                    manualItem: {
+                        nameInput: document.getElementById('manual-item-name'),
+                        quantityInput: document.getElementById('manual-item-quantity'),
+                        addBtn: document.getElementById('add-manual-item-btn'),
+                        listUl: document.getElementById('manual-items-list'),
+                    },
                     processarBtn: document.getElementById('processarRelatoriosBtn'),
                     finalizarBtn: document.getElementById('finalizarFechamentoBtn'),
-                    itensViagemInput: document.getElementById('itensParaViagemInput'),
+                    taxaServicoInput: document.getElementById('taxaServicoInput'),
                     staffCountInput: document.getElementById('daily-staff-count'),
                     staffCostInput: document.getElementById('daily-staff-cost'),
                     extraExpense: {
@@ -371,7 +427,7 @@
             };
 
             // --- CONSTANTES E ESTADO ---
-            const STORAGE_KEY = 'hybridClosingData_v15';
+            const STORAGE_KEY = 'hybridClosingData_v19';
             const getDefaultData = () => ({
                 config: {
                     monthlyExpenses: 2000, workingDays: 26, taxaIfoodPercentual: 15.2,
@@ -384,6 +440,7 @@
                 pedidoFile: null,
                 itensFile: null,
                 menuFile: null,
+                manualItems: [],
                 extraExpenses: [],
                 ignoredItems: [],
             };
@@ -469,6 +526,16 @@
                     ui.configInputs[key].value = appData.config[key] || '';
                 });
                 renderCardapioList();
+                populateCardapioDatalist();
+            }
+
+            function populateCardapioDatalist() {
+                ui.cardapioDatalist.innerHTML = '';
+                appData.cardapio.forEach(item => {
+                    const option = document.createElement('option');
+                    option.value = item.nome;
+                    ui.cardapioDatalist.appendChild(option);
+                });
             }
 
             function renderCardapioItem(p, index) {
@@ -513,6 +580,20 @@
                 ui.cardapioListContainer.innerHTML = appData.cardapio.length === 0 
                     ? '<p class="italic text-slate-500 p-2">Nenhum produto cadastrado.</p>' 
                     : appData.cardapio.map(renderCardapioItem).join('');
+                populateCardapioDatalist();
+                lucide.createIcons();
+            }
+
+            function renderManualItemsList() {
+                ui.fechamento.manualItem.listUl.innerHTML = sessionData.manualItems.length === 0
+                    ? '<li class="italic list-none">Nenhum item manual.</li>'
+                    : sessionData.manualItems.map((item, index) => `
+                        <li class="flex justify-between items-center">
+                            <span>${item.quantity}x ${item.name}</span>
+                            <button class="remove-manual-item-btn text-red-500 hover:text-red-700" data-index="${index}">
+                                <i data-lucide="x-circle" class="h-4 w-4"></i>
+                            </button>
+                        </li>`).join('');
                 lucide.createIcons();
             }
 
@@ -530,13 +611,20 @@
             }
             
             function renderSummary(summary) {
+                const taxaServicoInfo = summary.taxaServico > 0 
+                    ? `<div class="text-xs text-center text-slate-500 italic mt-2 border-t pt-2">
+                           Deste total, ${formatCurrency(summary.taxaServico)} é referente à Taxa de Serviço.
+                       </div>`
+                    : '';
+
                 ui.fechamento.summaryContainer.innerHTML = `
                     <div class="space-y-2">
                         <div class="flex justify-between items-center p-3 bg-blue-50 rounded-md text-lg">
                             <span class="font-medium text-blue-800">Faturamento Bruto</span>
                             <span class="font-bold text-blue-900">${formatCurrency(summary.faturamentoBruto)}</span>
                         </div>
-                        <div class="text-sm space-y-1 pl-2">
+                        ${taxaServicoInfo}
+                        <div class="text-sm space-y-1 pt-2">
                             <div class="flex justify-between items-center"><span class="text-orange-700">(-) Custo dos Produtos (CMV)</span><span class="font-medium">${formatCurrency(summary.cmv)}</span></div>
                             <div class="flex justify-between items-center"><span class="text-orange-700">(-) Taxas de Canais e Pag.</span><span class="font-medium">${formatCurrency(summary.taxasTotais)}</span></div>
                             <div class="flex justify-between items-center"><span class="text-orange-700">(-) Custo Adicional Viagem</span><span class="font-medium">${formatCurrency(summary.custoAdicionalViagem)}</span></div>
@@ -605,7 +693,7 @@
             // --- LÓGICA DE NEGÓCIO E EVENTOS ---
             function resetDay() {
                 sessionData = {
-                    pedidoFile: null, itensFile: null, menuFile: null, extraExpenses: [], ignoredItems: []
+                    pedidoFile: null, itensFile: null, menuFile: null, manualItems: [], extraExpenses: [], ignoredItems: []
                 };
                 
                 ui.fechamento.pedidos.fileName.textContent = 'Nenhum arquivo.';
@@ -613,12 +701,13 @@
                 ui.fechamento.itens.fileName.textContent = 'Nenhum arquivo.';
                 ui.fechamento.itens.input.value = '';
 
-                ui.fechamento.itensViagemInput.value = '';
+                ui.fechamento.taxaServicoInput.value = '';
                 ui.fechamento.staffCountInput.value = '';
                 ui.fechamento.staffCostInput.value = '';
                 ui.fechamento.extraExpense.desc.value = '';
                 ui.fechamento.extraExpense.value.value = '';
-
+                
+                renderManualItemsList();
                 renderExtraExpensesList();
                 ui.fechamento.summaryContainer.innerHTML = '<div class="text-center p-4 bg-gray-50 rounded-lg"><p class="text-slate-600">Aguardando dados...</p></div>';
                 
@@ -644,28 +733,54 @@
                 reader.onerror = e => reject(e);
                 reader.readAsText(file, 'UTF-8');
             });
-            
-            async function processarRelatorios() {
-                if (!sessionData.itensFile) {
-                    return showNotification("Por favor, importe o 'Relatório de Itens Vendidos'.", 'error');
-                }
-                try {
-                    sessionData.ignoredItems = []; 
+
+            async function getSoldItems() {
+                const soldItems = {};
+
+                // Processar itens do CSV
+                if (sessionData.itensFile) {
                     const itensCSV = await readFileAsText(sessionData.itensFile);
                     const itensRows = itensCSV.replace(/\r\n/g, '\n').trim().split('\n').slice(1);
-                    const itensNaoEncontrados = new Set();
-                    const cardapioNomesNormalizados = appData.cardapio.map(p => normalizeString(p.nome));
-
                     itensRows.forEach(rowStr => {
                         const row = rowStr.trim();
                         if (!row) return;
                         const columns = row.split(',');
-                        if (columns.length < 1) return;
+                        if (columns.length < 2) return;
                         const nomeItem = (columns[0] || '').trim();
-                        if (!nomeItem) return;
+                        const quantidade = parseInt(columns[1], 10);
+                        if (!nomeItem || isNaN(quantidade)) return;
+                        
+                        const normalizedName = normalizeString(nomeItem);
+                        soldItems[normalizedName] = (soldItems[normalizedName] || { name: nomeItem, quantity: 0 });
+                        soldItems[normalizedName].quantity += quantidade;
+                    });
+                }
 
-                        if (!cardapioNomesNormalizados.includes(normalizeString(nomeItem))) {
-                            itensNaoEncontrados.add(nomeItem);
+                // Processar itens manuais
+                sessionData.manualItems.forEach(item => {
+                    const normalizedName = normalizeString(item.name);
+                    soldItems[normalizedName] = (soldItems[normalizedName] || { name: item.name, quantity: 0 });
+                    soldItems[normalizedName].quantity += item.quantity;
+                });
+                
+                return Object.values(soldItems);
+            }
+            
+            async function processarRelatorios() {
+                try {
+                    sessionData.ignoredItems = [];
+                    const soldItems = await getSoldItems();
+
+                    if (soldItems.length === 0) {
+                        return showNotification("Nenhum item vendido encontrado (nem no relatório, nem manualmente).", 'warning');
+                    }
+
+                    const itensNaoEncontrados = new Set();
+                    const cardapioNomesNormalizados = appData.cardapio.map(p => normalizeString(p.nome));
+
+                    soldItems.forEach(item => {
+                        if (!cardapioNomesNormalizados.includes(normalizeString(item.name))) {
+                            itensNaoEncontrados.add(item.name);
                         }
                     });
 
@@ -678,86 +793,103 @@
                         showNotification("Todos os itens encontrados! Prossiga para os dados manuais.", 'success');
                     }
                 } catch (err) {
-                    showNotification("Erro ao ler o arquivo de itens.", 'error');
+                    showNotification("Erro ao processar itens vendidos.", 'error');
                     console.error(err);
                 }
             }
 
-            async function performFinalCalculation() {
-                if (!sessionData.pedidoFile || !sessionData.itensFile) {
-                    return showNotification("Importe os dois relatórios para calcular.", 'error');
-                }
-                
+            async function promptForTakeawayItems() {
                 try {
-                    const [pedidosCSV, itensCSV] = await Promise.all([
-                        readFileAsText(sessionData.pedidoFile), 
-                        readFileAsText(sessionData.itensFile)
-                    ]);
-                    
-                    const { config } = appData;
-                    const custoFixoDia = parseValue(config.monthlyExpenses) / (parseInt(config.workingDays, 10) || 1);
+                    const soldItems = await getSoldItems();
+                    const nonBeverageItems = {};
 
-                    const pedidosRows = pedidosCSV.replace(/\r\n/g, '\n').trim().split('\n').slice(1);
-                    let faturamentoBruto = 0, faturamentoIfood = 0, faturamentoCartaoProprio = 0, numPedidosIfood = 0;
-
-                    pedidosRows.forEach(rowStr => {
-                        const row = rowStr.trim();
-                        if (!row) return;
-                        const columns = row.split(',');
-                        if (columns.length < 8) return;
-                        
-                        const valorTotal = parseValue(columns[5]);
-                        const condicaoPagamento = (columns[7] || '').trim().toLowerCase();
-                        const origem = (columns[8] || '').trim();
-
-                        if (!isNaN(valorTotal)) {
-                            faturamentoBruto += valorTotal;
-                            if (origem.toLowerCase() === 'ifood') {
-                                faturamentoIfood += valorTotal;
-                                numPedidosIfood++;
-                            } else if (condicaoPagamento.includes('cartão')) {
-                                faturamentoCartaoProprio += valorTotal;
-                            }
+                    soldItems.forEach(item => {
+                        const itemCardapio = appData.cardapio.find(p => normalizeString(p.nome) === normalizeString(item.name));
+                        if (itemCardapio && !itemCardapio.eBebida) {
+                           nonBeverageItems[item.name] = item.quantity;
                         }
                     });
 
+                    ui.takeawayModal.list.innerHTML = '';
+                    Object.entries(nonBeverageItems).forEach(([nome, qtd]) => {
+                        const itemHTML = `
+                            <div class="grid grid-cols-3 items-center gap-4">
+                                <label class="col-span-2 font-medium" for="takeaway-item-${normalizeString(nome)}">${nome} (Vendido: ${qtd})</label>
+                                <input type="number" id="takeaway-item-${normalizeString(nome)}" data-total="${qtd}"
+                                       class="col-span-1 p-2 border rounded-md" placeholder="0" min="0" max="${qtd}">
+                            </div>
+                        `;
+                        ui.takeawayModal.list.insertAdjacentHTML('beforeend', itemHTML);
+                    });
+
+                    ui.takeawayModal.container.classList.remove('hidden');
+
+                } catch (err) {
+                     showNotification("Erro ao processar itens para viagem.", 'error');
+                     console.error(err);
+                }
+            }
+
+            async function executeCalculation(totalTakeawayItems) {
+                try {
+                    const { config } = appData;
+                    const custoFixoDia = parseValue(config.monthlyExpenses) / (parseInt(config.workingDays, 10) || 1);
+                    
+                    // Calcular faturamento
+                    let faturamentoBruto = 0, faturamentoIfood = 0, faturamentoCartaoProprio = 0, numPedidosIfood = 0;
+                    if (sessionData.pedidoFile) {
+                        const pedidosCSV = await readFileAsText(sessionData.pedidoFile);
+                        const pedidosRows = pedidosCSV.replace(/\r\n/g, '\n').trim().split('\n').slice(1);
+                        pedidosRows.forEach(rowStr => {
+                            const row = rowStr.trim();
+                            if (!row) return;
+                            const columns = row.split(',');
+                            if (columns.length < 8) return;
+                            
+                            const valorTotal = parseValue(columns[5]);
+                            const condicaoPagamento = (columns[7] || '').trim().toLowerCase();
+                            const origem = (columns[8] || '').trim();
+
+                            if (!isNaN(valorTotal)) {
+                                faturamentoBruto += valorTotal;
+                                if (origem.toLowerCase() === 'ifood') {
+                                    faturamentoIfood += valorTotal;
+                                    numPedidosIfood++;
+                                } else if (condicaoPagamento.includes('cartão')) {
+                                    faturamentoCartaoProprio += valorTotal;
+                                }
+                            }
+                        });
+                    }
+
+                    // Calcular taxas
                     const taxasIfood = (faturamentoIfood * parseValue(config.taxaIfoodPercentual) / 100) + (numPedidosIfood * parseValue(config.taxaIfoodFixa));
                     const taxasCartao = faturamentoCartaoProprio * parseValue(config.taxaCartao) / 100;
                     const taxasTotais = taxasIfood + taxasCartao;
-
-                    const itensRows = itensCSV.replace(/\r\n/g, '\n').trim().split('\n').slice(1);
+                    
+                    // Calcular CMV
+                    const soldItems = await getSoldItems();
                     let cmv = 0;
-                    itensRows.forEach(rowStr => {
-                        const row = rowStr.trim();
-                        if (!row) return;
-                        const columns = row.split(',');
-                        if (columns.length < 2) return;
-                        
-                        const nomeItem = (columns[0] || '').trim();
-                        if (!nomeItem) return;
-                        
-                        if (sessionData.ignoredItems.includes(normalizeString(nomeItem))) {
+                    soldItems.forEach(item => {
+                        if (sessionData.ignoredItems.includes(normalizeString(item.name))) {
                             return;
                         }
-
-                        const quantidade = parseInt(columns[1], 10);
-                        if (isNaN(quantidade)) return;
-
-                        const itemCardapio = appData.cardapio.find(p => normalizeString(p.nome) === normalizeString(nomeItem));
+                        const itemCardapio = appData.cardapio.find(p => normalizeString(p.nome) === normalizeString(item.name));
                         if (itemCardapio) {
-                            cmv += quantidade * itemCardapio.custoProducao;
+                            cmv += item.quantity * itemCardapio.custoProducao;
                         }
                     });
-
-                    const itensViagem = parseValue(ui.fechamento.itensViagemInput.value);
-                    const custoAdicionalViagem = itensViagem * parseValue(config.custoAdicionalDelivery);
+                    
+                    // Calcular custos manuais
+                    const custoAdicionalViagem = totalTakeawayItems * parseValue(config.custoAdicionalDelivery);
                     const custoDiaristas = parseValue(ui.fechamento.staffCountInput.value) * parseValue(ui.fechamento.staffCostInput.value);
                     const custoExtras = sessionData.extraExpenses.reduce((sum, exp) => sum + exp.value, 0);
+                    const taxaServico = parseValue(ui.fechamento.taxaServicoInput.value);
 
                     const lucroFinal = faturamentoBruto - cmv - taxasTotais - custoAdicionalViagem - custoFixoDia - custoDiaristas - custoExtras;
                     
                     const finalSummary = {
-                        faturamentoBruto, cmv, taxasTotais, custoAdicionalViagem, custoFixoDia, custoDiaristas, custoExtras, lucroFinal
+                        faturamentoBruto, cmv, taxasTotais, custoAdicionalViagem, custoFixoDia, custoDiaristas, custoExtras, taxaServico, lucroFinal
                     };
                     
                     renderSummary(finalSummary);
@@ -875,6 +1007,18 @@
             };
             ui.importModal.closeBtn.addEventListener('click', closeModal);
             ui.importModal.cancelBtn.addEventListener('click', closeModal);
+            ui.takeawayModal.closeBtn.addEventListener('click', () => ui.takeawayModal.container.classList.add('hidden'));
+
+            ui.takeawayModal.confirmBtn.addEventListener('click', () => {
+                let totalItems = 0;
+                const inputs = ui.takeawayModal.list.querySelectorAll('input[type="number"]');
+                inputs.forEach(input => {
+                    totalItems += parseValue(input.value);
+                });
+                ui.takeawayModal.container.classList.add('hidden');
+                executeCalculation(totalItems);
+            });
+
 
             ui.importModal.saveBtn.addEventListener('click', () => {
                 const newProducts = [];
@@ -897,7 +1041,35 @@
             });
             
             ui.fechamento.processarBtn.addEventListener('click', processarRelatorios);
-            ui.fechamento.finalizarBtn.addEventListener('click', performFinalCalculation);
+            ui.fechamento.finalizarBtn.addEventListener('click', promptForTakeawayItems);
+
+            ui.fechamento.manualItem.addBtn.addEventListener('click', () => {
+                const name = ui.fechamento.manualItem.nameInput.value.trim();
+                const quantity = parseInt(ui.fechamento.manualItem.quantityInput.value, 10);
+
+                if (!name || isNaN(quantity) || quantity <= 0) {
+                    return showNotification("Informe um nome de item válido e uma quantidade.", "error");
+                }
+
+                const itemExists = appData.cardapio.some(p => normalizeString(p.nome) === normalizeString(name));
+                if (!itemExists) {
+                    return showNotification(`Item "${name}" não encontrado no cardápio. Cadastre-o primeiro.`, "error");
+                }
+                
+                sessionData.manualItems.push({ name, quantity });
+                renderManualItemsList();
+                ui.fechamento.manualItem.nameInput.value = '';
+                ui.fechamento.manualItem.quantityInput.value = '';
+            });
+
+            ui.fechamento.manualItem.listUl.addEventListener('click', (e) => {
+                const removeBtn = e.target.closest('.remove-manual-item-btn');
+                if (removeBtn) {
+                    const index = parseInt(removeBtn.dataset.index, 10);
+                    sessionData.manualItems.splice(index, 1);
+                    renderManualItemsList();
+                }
+            });
 
             ui.fechamento.cadastroPendente.list.addEventListener('click', (e) => {
                 const saveBtn = e.target.closest('.salvar-item-pendente-btn');
