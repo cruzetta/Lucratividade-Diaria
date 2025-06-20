@@ -120,7 +120,7 @@
                                 <span class="bg-indigo-600 text-white rounded-full h-8 w-8 text-lg font-bold flex items-center justify-center mr-3">1</span>
                                 Importar Relatórios & Vendas Manuais
                             </h3>
-                            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                            <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
                                 <div>
                                     <p class="text-sm font-medium text-slate-600 mb-2">Relatório de Pedidos</p>
                                     <label for="relatorioPedidosInput" id="dropZonePedidos" class="drop-zone flex justify-center w-full px-4 py-5 border-2 border-gray-300 border-dashed rounded-md cursor-pointer hover:border-indigo-400">
@@ -130,12 +130,20 @@
                                     <div id="fileNamePedidos" class="mt-2 text-xs text-center text-slate-500 font-medium">Nenhum arquivo.</div>
                                 </div>
                                 <div>
-                                    <p class="text-sm font-medium text-slate-600 mb-2">Relatório de Itens Vendidos</p>
+                                    <p class="text-sm font-medium text-slate-600 mb-2">Relatório de Itens</p>
                                     <label for="relatorioItensInput" id="dropZoneItens" class="drop-zone flex justify-center w-full px-4 py-5 border-2 border-gray-300 border-dashed rounded-md cursor-pointer hover:border-indigo-400">
                                         <div class="text-center"><i data-lucide="file-up" class="mx-auto h-10 w-10 text-gray-400"></i><p class="mt-1 text-sm text-gray-600">Arraste ou clique</p></div>
                                     </label>
                                     <input type="file" id="relatorioItensInput" accept=".csv" class="hidden"/>
                                     <div id="fileNameItens" class="mt-2 text-xs text-center text-slate-500 font-medium">Nenhum arquivo.</div>
+                                </div>
+                                <div>
+                                    <p class="text-sm font-medium text-slate-600 mb-2">Relatório de Adicionais</p>
+                                    <label for="relatorioAdicionaisInput" id="dropZoneAdicionais" class="drop-zone flex justify-center w-full px-4 py-5 border-2 border-gray-300 border-dashed rounded-md cursor-pointer hover:border-indigo-400">
+                                        <div class="text-center"><i data-lucide="file-up" class="mx-auto h-10 w-10 text-gray-400"></i><p class="mt-1 text-sm text-gray-600">Arraste ou clique</p></div>
+                                    </label>
+                                    <input type="file" id="relatorioAdicionaisInput" accept=".csv" class="hidden"/>
+                                    <div id="fileNameAdicionais" class="mt-2 text-xs text-center text-slate-500 font-medium">Nenhum arquivo.</div>
                                 </div>
                             </div>
 
@@ -230,6 +238,7 @@
                             <div class="mt-4 pt-4 border-t space-y-4">
                                 <div><label class="block text-sm font-medium">Despesas Fixas Mensais (R$)</label><input type="number" id="config-monthly-expenses" class="mt-1 block w-full p-2 border rounded-md"></div>
                                 <div><label class="block text-sm font-medium">Dias Úteis no Mês</label><input type="number" id="config-working-days" class="mt-1 block w-full p-2 border rounded-md"></div>
+                                <div><label class="block text-sm font-medium">Imposto Sobre Faturamento (%)</label><input type="number" id="config-imposto-faturamento" class="mt-1 block w-full p-2 border rounded-md"></div>
                                 <div><label class="block text-sm font-medium">Taxa iFood (%)</label><input type="number" id="config-taxa-ifood-percentual" class="mt-1 block w-full p-2 border rounded-md"></div>
                                 <div><label class="block text-sm font-medium">Taxa Fixa iFood (R$)</label><input type="number" id="config-taxa-ifood-fixa" class="mt-1 block w-full p-2 border rounded-md"></div>
                                 <div><label class="block text-sm font-medium">Taxa Cartão (Canais Próprios, %)</label><input type="number" id="config-taxa-cartao" class="mt-1 block w-full p-2 border rounded-md"></div>
@@ -353,6 +362,7 @@
                 configInputs: {
                     monthlyExpenses: document.getElementById('config-monthly-expenses'),
                     workingDays: document.getElementById('config-working-days'),
+                    impostoFaturamento: document.getElementById('config-imposto-faturamento'),
                     taxaIfoodPercentual: document.getElementById('config-taxa-ifood-percentual'),
                     taxaIfoodFixa: document.getElementById('config-taxa-ifood-fixa'),
                     taxaCartao: document.getElementById('config-taxa-cartao'),
@@ -399,6 +409,11 @@
                         dropZone: document.getElementById('dropZoneItens'),
                         fileName: document.getElementById('fileNameItens'),
                     },
+                    adicionais: {
+                        input: document.getElementById('relatorioAdicionaisInput'),
+                        dropZone: document.getElementById('dropZoneAdicionais'),
+                        fileName: document.getElementById('fileNameAdicionais'),
+                    },
                     manualItem: {
                         nameInput: document.getElementById('manual-item-name'),
                         quantityInput: document.getElementById('manual-item-quantity'),
@@ -427,11 +442,16 @@
             };
 
             // --- CONSTANTES E ESTADO ---
-            const STORAGE_KEY = 'hybridClosingData_v19';
+            const STORAGE_KEY = 'hybridClosingData_v21';
             const getDefaultData = () => ({
                 config: {
-                    monthlyExpenses: 2000, workingDays: 26, taxaIfoodPercentual: 15.2,
-                    taxaIfoodFixa: 0.99, taxaCartao: 3.5, custoAdicionalDelivery: 2.00
+                    monthlyExpenses: 2000, 
+                    workingDays: 26,
+                    impostoFaturamento: 6.0,
+                    taxaIfoodPercentual: 15.2,
+                    taxaIfoodFixa: 0.99, 
+                    taxaCartao: 3.5, 
+                    custoAdicionalDelivery: 2.00
                 },
                 cardapio: [],
             });
@@ -439,6 +459,7 @@
             let sessionData = {
                 pedidoFile: null,
                 itensFile: null,
+                adicionaisFile: null,
                 menuFile: null,
                 manualItems: [],
                 extraExpenses: [],
@@ -523,7 +544,9 @@
             // --- RENDERIZAÇÃO E ATUALIZAÇÃO DA UI ---
             function updateUIFromData() {
                 Object.keys(ui.configInputs).forEach(key => {
-                    ui.configInputs[key].value = appData.config[key] || '';
+                    if (ui.configInputs[key]) {
+                        ui.configInputs[key].value = appData.config[key] || '';
+                    }
                 });
                 renderCardapioList();
                 populateCardapioDatalist();
@@ -626,6 +649,7 @@
                         ${taxaServicoInfo}
                         <div class="text-sm space-y-1 pt-2">
                             <div class="flex justify-between items-center"><span class="text-orange-700">(-) Custo dos Produtos (CMV)</span><span class="font-medium">${formatCurrency(summary.cmv)}</span></div>
+                            <div class="flex justify-between items-center"><span class="text-orange-700">(-) Imposto Sobre Faturamento</span><span class="font-medium">${formatCurrency(summary.impostoFaturamentoValor)}</span></div>
                             <div class="flex justify-between items-center"><span class="text-orange-700">(-) Taxas de Canais e Pag.</span><span class="font-medium">${formatCurrency(summary.taxasTotais)}</span></div>
                             <div class="flex justify-between items-center"><span class="text-orange-700">(-) Custo Adicional Viagem</span><span class="font-medium">${formatCurrency(summary.custoAdicionalViagem)}</span></div>
                             <div class="flex justify-between items-center"><span class="text-orange-700">(-) Custo Fixo do Dia</span><span class="font-medium">${formatCurrency(summary.custoFixoDia)}</span></div>
@@ -693,19 +717,23 @@
             // --- LÓGICA DE NEGÓCIO E EVENTOS ---
             function resetDay() {
                 sessionData = {
-                    pedidoFile: null, itensFile: null, menuFile: null, manualItems: [], extraExpenses: [], ignoredItems: []
+                    pedidoFile: null, itensFile: null, adicionaisFile: null, menuFile: null, manualItems: [], extraExpenses: [], ignoredItems: []
                 };
                 
                 ui.fechamento.pedidos.fileName.textContent = 'Nenhum arquivo.';
                 ui.fechamento.pedidos.input.value = '';
                 ui.fechamento.itens.fileName.textContent = 'Nenhum arquivo.';
                 ui.fechamento.itens.input.value = '';
+                ui.fechamento.adicionais.fileName.textContent = 'Nenhum arquivo.';
+                ui.fechamento.adicionais.input.value = '';
 
                 ui.fechamento.taxaServicoInput.value = '';
                 ui.fechamento.staffCountInput.value = '';
                 ui.fechamento.staffCostInput.value = '';
                 ui.fechamento.extraExpense.desc.value = '';
                 ui.fechamento.extraExpense.value.value = '';
+                ui.fechamento.manualItem.nameInput.value = '';
+                ui.fechamento.manualItem.quantityInput.value = '';
                 
                 renderManualItemsList();
                 renderExtraExpensesList();
@@ -736,31 +764,42 @@
 
             async function getSoldItems() {
                 const soldItems = {};
+                const addOrUpdateItem = (name, quantity) => {
+                    if (!name || isNaN(quantity)) return;
+                    const normalizedName = normalizeString(name);
+                    soldItems[normalizedName] = (soldItems[normalizedName] || { name: name, quantity: 0 });
+                    soldItems[normalizedName].quantity += quantity;
+                };
 
-                // Processar itens do CSV
+                // Processar itens do CSV principal
                 if (sessionData.itensFile) {
                     const itensCSV = await readFileAsText(sessionData.itensFile);
                     const itensRows = itensCSV.replace(/\r\n/g, '\n').trim().split('\n').slice(1);
                     itensRows.forEach(rowStr => {
-                        const row = rowStr.trim();
-                        if (!row) return;
-                        const columns = row.split(',');
+                        const columns = rowStr.trim().split(',');
                         if (columns.length < 2) return;
-                        const nomeItem = (columns[0] || '').trim();
-                        const quantidade = parseInt(columns[1], 10);
-                        if (!nomeItem || isNaN(quantidade)) return;
-                        
-                        const normalizedName = normalizeString(nomeItem);
-                        soldItems[normalizedName] = (soldItems[normalizedName] || { name: nomeItem, quantity: 0 });
-                        soldItems[normalizedName].quantity += quantidade;
+                        addOrUpdateItem(columns[0].trim(), parseInt(columns[1], 10));
+                    });
+                }
+
+                // Processar itens do CSV de adicionais
+                if(sessionData.adicionaisFile) {
+                    const adicionaisCSV = await readFileAsText(sessionData.adicionaisFile);
+                    const adicionaisRows = adicionaisCSV.replace(/\r\n/g, '\n').trim().split('\n').slice(1);
+                    adicionaisRows.forEach(rowStr => {
+                        const columns = rowStr.trim().split(',');
+                        if (columns.length < 2) return;
+                        const nomeAdicional = (columns[0] || '').trim();
+                        // Apenas processa se for um "extra" pago
+                        if (normalizeString(nomeAdicional).includes('extra')) {
+                            addOrUpdateItem(nomeAdicional, parseInt(columns[1], 10));
+                        }
                     });
                 }
 
                 // Processar itens manuais
                 sessionData.manualItems.forEach(item => {
-                    const normalizedName = normalizeString(item.name);
-                    soldItems[normalizedName] = (soldItems[normalizedName] || { name: item.name, quantity: 0 });
-                    soldItems[normalizedName].quantity += item.quantity;
+                    addOrUpdateItem(item.name, item.quantity);
                 });
                 
                 return Object.values(soldItems);
@@ -772,7 +811,7 @@
                     const soldItems = await getSoldItems();
 
                     if (soldItems.length === 0) {
-                        return showNotification("Nenhum item vendido encontrado (nem no relatório, nem manualmente).", 'warning');
+                        return showNotification("Nenhum item vendido encontrado.", 'warning');
                     }
 
                     const itensNaoEncontrados = new Set();
@@ -811,18 +850,22 @@
                     });
 
                     ui.takeawayModal.list.innerHTML = '';
-                    Object.entries(nonBeverageItems).forEach(([nome, qtd]) => {
-                        const itemHTML = `
-                            <div class="grid grid-cols-3 items-center gap-4">
-                                <label class="col-span-2 font-medium" for="takeaway-item-${normalizeString(nome)}">${nome} (Vendido: ${qtd})</label>
-                                <input type="number" id="takeaway-item-${normalizeString(nome)}" data-total="${qtd}"
-                                       class="col-span-1 p-2 border rounded-md" placeholder="0" min="0" max="${qtd}">
-                            </div>
-                        `;
-                        ui.takeawayModal.list.insertAdjacentHTML('beforeend', itemHTML);
-                    });
-
-                    ui.takeawayModal.container.classList.remove('hidden');
+                    if (Object.keys(nonBeverageItems).length > 0) {
+                        Object.entries(nonBeverageItems).forEach(([nome, qtd]) => {
+                            const itemHTML = `
+                                <div class="grid grid-cols-3 items-center gap-4">
+                                    <label class="col-span-2 font-medium" for="takeaway-item-${normalizeString(nome)}">${nome} (Vendido: ${qtd})</label>
+                                    <input type="number" id="takeaway-item-${normalizeString(nome)}" data-total="${qtd}"
+                                        class="col-span-1 p-2 border rounded-md" placeholder="0" min="0" max="${qtd}">
+                                </div>
+                            `;
+                            ui.takeawayModal.list.insertAdjacentHTML('beforeend', itemHTML);
+                        });
+                        ui.takeawayModal.container.classList.remove('hidden');
+                    } else {
+                        // If no non-beverage items, just proceed with 0
+                        executeCalculation(0);
+                    }
 
                 } catch (err) {
                      showNotification("Erro ao processar itens para viagem.", 'error');
@@ -836,7 +879,7 @@
                     const custoFixoDia = parseValue(config.monthlyExpenses) / (parseInt(config.workingDays, 10) || 1);
                     
                     // Calcular faturamento
-                    let faturamentoBruto = 0, faturamentoIfood = 0, faturamentoCartaoProprio = 0, numPedidosIfood = 0;
+                    let faturamentoBrutoRelatorio = 0, faturamentoIfood = 0, faturamentoCartaoProprio = 0, numPedidosIfood = 0;
                     if (sessionData.pedidoFile) {
                         const pedidosCSV = await readFileAsText(sessionData.pedidoFile);
                         const pedidosRows = pedidosCSV.replace(/\r\n/g, '\n').trim().split('\n').slice(1);
@@ -851,7 +894,7 @@
                             const origem = (columns[8] || '').trim();
 
                             if (!isNaN(valorTotal)) {
-                                faturamentoBruto += valorTotal;
+                                faturamentoBrutoRelatorio += valorTotal;
                                 if (origem.toLowerCase() === 'ifood') {
                                     faturamentoIfood += valorTotal;
                                     numPedidosIfood++;
@@ -862,11 +905,16 @@
                         });
                     }
 
+                    const faturamentoBruto = faturamentoBrutoRelatorio;
+
                     // Calcular taxas
                     const taxasIfood = (faturamentoIfood * parseValue(config.taxaIfoodPercentual) / 100) + (numPedidosIfood * parseValue(config.taxaIfoodFixa));
                     const taxasCartao = faturamentoCartaoProprio * parseValue(config.taxaCartao) / 100;
                     const taxasTotais = taxasIfood + taxasCartao;
                     
+                    // Calcular imposto
+                    const impostoFaturamentoValor = faturamentoBruto * (parseValue(config.impostoFaturamento) / 100);
+
                     // Calcular CMV
                     const soldItems = await getSoldItems();
                     let cmv = 0;
@@ -886,10 +934,10 @@
                     const custoExtras = sessionData.extraExpenses.reduce((sum, exp) => sum + exp.value, 0);
                     const taxaServico = parseValue(ui.fechamento.taxaServicoInput.value);
 
-                    const lucroFinal = faturamentoBruto - cmv - taxasTotais - custoAdicionalViagem - custoFixoDia - custoDiaristas - custoExtras;
+                    const lucroFinal = faturamentoBruto - cmv - taxasTotais - impostoFaturamentoValor - custoAdicionalViagem - custoFixoDia - custoDiaristas - custoExtras;
                     
                     const finalSummary = {
-                        faturamentoBruto, cmv, taxasTotais, custoAdicionalViagem, custoFixoDia, custoDiaristas, custoExtras, taxaServico, lucroFinal
+                        faturamentoBruto, cmv, taxasTotais, custoAdicionalViagem, custoFixoDia, custoDiaristas, custoExtras, taxaServico, impostoFaturamentoValor, lucroFinal
                     };
                     
                     renderSummary(finalSummary);
@@ -910,7 +958,9 @@
 
             ui.saveConfigBtn.addEventListener('click', () => {
                 Object.keys(ui.configInputs).forEach(key => {
-                    appData.config[key] = ui.configInputs[key].value;
+                    if(ui.configInputs[key]) {
+                        appData.config[key] = ui.configInputs[key].value;
+                    }
                 });
                 saveData();
                 showNotification('Configurações salvas!', 'success');
@@ -1137,6 +1187,7 @@
                 loadData();
                 setupDropZone(ui.fechamento.pedidos.dropZone, ui.fechamento.pedidos.input, ui.fechamento.pedidos.fileName, file => { sessionData.pedidoFile = file; });
                 setupDropZone(ui.fechamento.itens.dropZone, ui.fechamento.itens.input, ui.fechamento.itens.fileName, file => { sessionData.itensFile = file; });
+                setupDropZone(ui.fechamento.adicionais.dropZone, ui.fechamento.adicionais.input, ui.fechamento.adicionais.fileName, file => { sessionData.adicionaisFile = file; });
                 setupDropZone(ui.menuCsv.dropZone, ui.menuCsv.input, ui.menuCsv.fileName, file => { 
                     sessionData.menuFile = file;
                     ui.menuCsv.prepareBtn.classList.remove('hidden');
