@@ -9,6 +9,7 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
     <script src="https://unpkg.com/lucide@0.379.0/dist/umd/lucide.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 
     <style>
         html { scroll-behavior: smooth; }
@@ -32,7 +33,7 @@
             background-color: #e0e7ff;
             border-color: #6366f1;
         }
-        details[open] summary .chevron {
+        details[open] summary .chevron-summary {
             transform: rotate(180deg);
         }
         .step-container.disabled {
@@ -79,6 +80,49 @@
         .toast.success { background-color: #22c55e; }
         .toast.error { background-color: #ef4444; }
         .toast.warning { background-color: #f59e0b; }
+        
+        /* Estilos do Modal de Revisão */
+        .tab-button {
+            padding: 0.5rem 1rem;
+            border-bottom: 2px solid transparent;
+            transition: all 0.2s;
+        }
+        .tab-button.active {
+            border-color: #4f46e5;
+            color: #4f46e5;
+            font-weight: 600;
+        }
+        .tab-content { display: none; }
+        .tab-content.active { display: block; }
+        
+        .detail-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 0.5rem 0;
+            border-bottom: 1px solid #f3f4f6;
+        }
+        .detail-row:last-child {
+            border-bottom: none;
+        }
+        .detail-label {
+            display: flex;
+            flex-direction: column;
+        }
+         .detail-label .main-label {
+            font-weight: 500;
+            color: #4b5563;
+        }
+        .detail-label .calc-label {
+            font-size: 0.75rem; /* 12px */
+            color: #6b7280;
+            font-style: italic;
+        }
+        .detail-value {
+            font-weight: 600;
+            text-align: right;
+        }
+
     </style>
 </head>
 <body class="bg-slate-100 text-slate-800">
@@ -87,6 +131,8 @@
         <nav class="container mx-auto px-4 md:px-8 flex justify-between items-center h-16">
             <div class="flex items-center space-x-2 sm:space-x-4">
                 <a href="#fechamento" data-page="page-fechamento" class="nav-link text-slate-600 hover:text-indigo-600 font-semibold text-sm sm:text-base">Fechamento do Dia</a>
+                <a href="#relatorio" data-page="page-relatorio" class="nav-link text-slate-600 hover:text-indigo-600 font-semibold text-sm sm:text-base">Relatório Detalhado</a>
+                <a href="#historico" data-page="page-historico" class="nav-link text-slate-600 hover:text-indigo-600 font-semibold text-sm sm:text-base">Histórico</a>
                 <a href="#cardapio" data-page="page-cardapio" class="nav-link text-slate-600 hover:text-indigo-600 font-semibold text-sm sm:text-base">Cardápio</a>
             </div>
              <button id="reset-day-btn" class="hidden sm:inline-flex items-center bg-orange-500 text-white font-bold py-2 px-4 rounded-lg hover:bg-orange-600 transition-all transform hover:scale-105">
@@ -126,7 +172,7 @@
                                     <label for="relatorioPedidosInput" id="dropZonePedidos" class="drop-zone flex justify-center w-full px-4 py-5 border-2 border-gray-300 border-dashed rounded-md cursor-pointer hover:border-indigo-400">
                                         <div class="text-center"><i data-lucide="file-up" class="mx-auto h-10 w-10 text-gray-400"></i><p class="mt-1 text-sm text-gray-600">Arraste ou clique</p></div>
                                     </label>
-                                    <input type="file" id="relatorioPedidosInput" accept=".csv" class="hidden"/>
+                                    <input type="file" id="relatorioPedidosInput" accept=".csv, .xlsx" class="hidden"/>
                                     <div id="fileNamePedidos" class="mt-2 text-xs text-center text-slate-500 font-medium">Nenhum arquivo.</div>
                                 </div>
                                 <div>
@@ -134,7 +180,7 @@
                                     <label for="relatorioItensInput" id="dropZoneItens" class="drop-zone flex justify-center w-full px-4 py-5 border-2 border-gray-300 border-dashed rounded-md cursor-pointer hover:border-indigo-400">
                                         <div class="text-center"><i data-lucide="file-up" class="mx-auto h-10 w-10 text-gray-400"></i><p class="mt-1 text-sm text-gray-600">Arraste ou clique</p></div>
                                     </label>
-                                    <input type="file" id="relatorioItensInput" accept=".csv" class="hidden"/>
+                                    <input type="file" id="relatorioItensInput" accept=".csv, .xlsx" class="hidden"/>
                                     <div id="fileNameItens" class="mt-2 text-xs text-center text-slate-500 font-medium">Nenhum arquivo.</div>
                                 </div>
                                 <div>
@@ -142,7 +188,7 @@
                                     <label for="relatorioAdicionaisInput" id="dropZoneAdicionais" class="drop-zone flex justify-center w-full px-4 py-5 border-2 border-gray-300 border-dashed rounded-md cursor-pointer hover:border-indigo-400">
                                         <div class="text-center"><i data-lucide="file-up" class="mx-auto h-10 w-10 text-gray-400"></i><p class="mt-1 text-sm text-gray-600">Arraste ou clique</p></div>
                                     </label>
-                                    <input type="file" id="relatorioAdicionaisInput" accept=".csv" class="hidden"/>
+                                    <input type="file" id="relatorioAdicionaisInput" accept=".csv, .xlsx" class="hidden"/>
                                     <div id="fileNameAdicionais" class="mt-2 text-xs text-center text-slate-500 font-medium">Nenhum arquivo.</div>
                                 </div>
                             </div>
@@ -167,8 +213,8 @@
                            </div>
 
                              <div class="mt-6 text-right">
-                                <button id="processarRelatoriosBtn" class="bg-indigo-600 text-white font-semibold py-2 px-6 rounded-md hover:bg-indigo-700 flex items-center justify-center ml-auto">
-                                    Processar e Avançar <i data-lucide="arrow-right" class="h-5 w-5 ml-2"></i>
+                                <button id="review-files-btn" class="bg-indigo-600 text-white font-semibold py-2 px-6 rounded-md hover:bg-indigo-700 flex items-center justify-center ml-auto">
+                                    Revisar Arquivos Importados <i data-lucide="arrow-right" class="h-5 w-5 ml-2"></i>
                                 </button>
                             </div>
                         </div>
@@ -211,10 +257,10 @@
                                         <li class="italic list-none">Nenhuma despesa extra.</li>
                                     </ul>
                                 </div>
-                           </div>
+                            </div>
                               <div class="mt-6 text-right">
                                 <button id="finalizarFechamentoBtn" class="bg-green-600 text-white font-bold text-lg py-3 px-8 rounded-lg hover:bg-green-700 transition shadow-lg flex items-center justify-center ml-auto">
-                                    <i data-lucide="check-circle" class="h-6 w-6 mr-3"></i> Calcular Resultado Final
+                                    <i data-lucide="check-circle" class="h-6 w-6 mr-3"></i> Confirmar Itens de Viagem e Calcular
                                 </button>
                             </div>
                         </div>
@@ -233,7 +279,7 @@
                         <details>
                             <summary class="cursor-pointer text-xl font-semibold text-slate-900 flex items-center justify-between">
                                 <span><i data-lucide="settings-2" class="h-5 w-5 mr-3 inline-block text-indigo-600"></i>Configurações</span>
-                                <i data-lucide="chevron-down" class="chevron h-5 w-5 transition-transform"></i>
+                                <i data-lucide="chevron-down" class="chevron-summary h-5 w-5 transition-transform"></i>
                             </summary>
                             <div class="mt-4 pt-4 border-t space-y-4">
                                 <div><label class="block text-sm font-medium">Despesas Fixas Mensais (R$)</label><input type="number" id="config-monthly-expenses" class="mt-1 block w-full p-2 border rounded-md"></div>
@@ -248,6 +294,35 @@
                         </details>
                     </div>
                 </div>
+            </div>
+        </section>
+
+        <!-- PÁGINA DE RELATÓRIO DETALHADO -->
+        <section id="page-relatorio" class="page">
+             <header class="text-center mb-8">
+                <h1 class="text-3xl md:text-4xl font-bold text-slate-900">Relatório Detalhado do Dia</h1>
+                <div class="mt-4 flex justify-center gap-4">
+                    <button id="export-excel-btn" class="bg-green-600 text-white font-semibold py-2 px-4 rounded-md hover:bg-green-700 flex items-center">
+                        <i data-lucide="file-spreadsheet" class="h-5 w-5 mr-2"></i> Exportar para Excel
+                    </button>
+                    <button id="archive-day-btn" class="bg-purple-600 text-white font-semibold py-2 px-4 rounded-md hover:bg-purple-700 flex items-center">
+                        <i data-lucide="archive" class="h-5 w-5 mr-2"></i> Concluir e Arquivar Dia
+                    </button>
+                </div>
+            </header>
+            <div id="detailed-report-content" class="space-y-8">
+                <div class="text-center p-6 bg-white rounded-lg shadow"><p class="text-slate-600">Calcule o resultado final na aba "Fechamento do Dia" para gerar o relatório.</p></div>
+            </div>
+        </section>
+
+        <!-- PÁGINA DO HISTÓRICO -->
+        <section id="page-historico" class="page">
+             <header class="text-center mb-8">
+                <h1 class="text-3xl md:text-4xl font-bold text-slate-900">Histórico de Fechamentos</h1>
+                <p class="mt-2 text-md md:text-lg text-slate-600">Consulte os relatórios detalhados de dias anteriores.</p>
+            </header>
+            <div id="history-content" class="space-y-4">
+                <div class="text-center p-6 bg-white rounded-lg shadow"><p class="text-slate-600">Nenhum dia arquivado ainda.</p></div>
             </div>
         </section>
 
@@ -274,12 +349,21 @@
                         <button id="manual-add-product-btn" class="w-full mt-4 bg-green-500 text-white font-semibold py-2 px-4 rounded-md hover:bg-green-600">Salvar Produto</button>
                     </div>
                      <div class="card">
-                        <h2 class="text-2xl font-semibold mb-4 border-b pb-2">Importar em Massa</h2>
-                        <label for="daily-menu-csv-input" id="dropZoneCardapio" class="drop-zone mt-2 flex justify-center w-full px-6 py-5 border-2 border-gray-300 border-dashed rounded-md cursor-pointer hover:border-indigo-400">
-                            <div class="space-y-1 text-center"><i data-lucide="upload-cloud" class="mx-auto h-12 w-12 text-gray-400"></i><p class="mt-1 text-sm text-gray-600">Arraste ou clique</p></div>
-                        </label>
-                        <input type="file" id="daily-menu-csv-input" class="hidden" accept=".csv">
-                        <div id="fileNameCardapio" class="mt-2 text-sm text-center text-slate-600 font-medium"></div>
+                        <h2 class="text-2xl font-semibold mb-4 border-b pb-2">Gerenciar Cardápio</h2>
+                        <div class="flex flex-col gap-3 mt-4">
+                            <button id="export-cardapio-csv-btn" class="w-full bg-blue-500 text-white font-semibold py-2 px-4 rounded-md hover:bg-blue-600 flex items-center justify-center">
+                                <i data-lucide="download" class="h-5 w-5 mr-2"></i> Exportar para CSV
+                            </button>
+                            <label for="daily-menu-csv-input" id="dropZoneCardapio" class="drop-zone flex justify-center w-full px-4 py-5 border-2 border-gray-300 border-dashed rounded-md cursor-pointer hover:border-indigo-400">
+                                <div class="text-center">
+                                    <i data-lucide="upload-cloud" class="mx-auto h-10 w-10 text-gray-400"></i>
+                                    <p class="mt-1 text-sm text-gray-600">Importar em Massa (CSV)</p>
+                                    <p class="text-xs text-gray-500">Arraste ou clique para substituir</p>
+                                </div>
+                            </label>
+                        </div>
+                        <input type="file" id="daily-menu-csv-input" class="hidden" accept=".csv, .xlsx">
+                        <div id="fileNameCardapio" class="mt-2 text-xs text-center text-slate-600 font-medium"></div>
                          <button id="prepare-import-btn" class="w-full mt-4 bg-indigo-500 text-white font-semibold py-2 px-4 rounded-md hover:bg-indigo-600 hidden">Revisar e Preparar Importação</button>
                     </div>
                 </div>
@@ -287,12 +371,12 @@
         </section>
     </main>
 
-    <!-- Modal de Revisão de Importação -->
+    <!-- Modal de Revisão de Importação do Cardápio -->
     <div id="import-review-modal" class="hidden fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-50">
         <div class="relative top-10 mx-auto p-5 border w-full max-w-4xl shadow-lg rounded-md bg-white">
             <div class="mt-3">
                 <div class="flex justify-between items-center pb-3 border-b">
-                    <h3 class="text-2xl font-bold text-slate-800">Revisão da Importação</h3>
+                    <h3 class="text-2xl font-bold text-slate-800">Revisão da Importação de Cardápio</h3>
                     <button id="close-modal-btn" class="cursor-pointer z-50 p-2 -mr-2">
                         <i data-lucide="x" class="h-6 w-6"></i>
                     </button>
@@ -310,7 +394,6 @@
                                 </tr>
                             </thead>
                             <tbody id="import-review-table-body">
-                                <!-- Conteúdo gerado via JS -->
                             </tbody>
                         </table>
                     </div>
@@ -323,20 +406,50 @@
         </div>
     </div>
     
-    <!-- Modal para Itens de Viagem -->
-    <div id="takeaway-items-modal" class="hidden fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-50">
-        <div class="relative top-10 mx-auto p-5 border w-full max-w-2xl shadow-lg rounded-md bg-white">
+    <!-- Modal de Revisão dos Relatórios do Dia -->
+    <div id="report-review-modal" class="hidden fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-50">
+        <div class="relative top-10 mx-auto p-5 border w-full max-w-6xl shadow-lg rounded-md bg-white">
             <div class="mt-3">
                 <div class="flex justify-between items-center pb-3 border-b">
-                    <h3 class="text-2xl font-bold text-slate-800">Confirmar Itens para Viagem</h3>
+                    <h3 class="text-2xl font-bold text-slate-800">Revisão dos Relatórios do Dia</h3>
+                    <button id="close-report-review-modal-btn" class="cursor-pointer z-50 p-2 -mr-2"><i data-lucide="x" class="h-6 w-6"></i></button>
+                </div>
+                <div class="mt-4">
+                    <p class="text-sm text-slate-600 mb-4">Confirme e edite os dados lidos dos seus relatórios. Linhas em branco ou com dados inválidos podem ser apagadas clicando no ícone da lixeira.</p>
+                    <div class="border-b border-gray-200">
+                        <nav id="report-review-tabs" class="-mb-px flex space-x-6" aria-label="Tabs"></nav>
+                    </div>
+                    <div id="report-review-tab-content" class="mt-4"></div>
+                     <div class="flex justify-end gap-4 mt-6 pt-4 border-t">
+                        <button id="cancel-report-review-btn" class="bg-gray-200 text-gray-800 font-semibold py-2 px-4 rounded-md">Cancelar</button>
+                        <button id="save-reviewed-data-btn" class="w-auto bg-green-600 text-white font-semibold py-2 px-6 rounded-md hover:bg-green-700">Salvar e Continuar</button>
+                   </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal para Itens de Viagem -->
+    <div id="takeaway-items-modal" class="hidden fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-50">
+        <div class="relative top-10 mx-auto p-5 border w-full max-w-lg shadow-lg rounded-md bg-white">
+            <div class="mt-3">
+                <div class="flex justify-between items-center pb-3 border-b">
+                    <h3 class="text-2xl font-bold text-slate-800">Confirmar Itens para Viagem (Anota Aí)</h3>
                     <button id="close-takeaway-modal-btn" class="cursor-pointer z-50 p-2 -mr-2">
                         <i data-lucide="x" class="h-6 w-6"></i>
                     </button>
                 </div>
                 <div class="mt-4">
-                    <p class="text-sm text-slate-600 mb-4">Informe quantas unidades de cada item (não-bebida) foram para viagem ou retirada para calcular o custo de embalagem.</p>
-                    <div id="takeaway-items-list" class="w-full max-h-[60vh] overflow-auto space-y-3">
-                        <!-- Conteúdo gerado via JS -->
+                    <p class="text-sm text-slate-600 mb-4">
+                        Informe o <strong class="font-bold">número total</strong> de itens (não-bebidas) do <strong class="font-bold">Anota Aí</strong> que foram para viagem ou retirada.
+                        <br>
+                        <span class="text-xs italic">(O custo das embalagens do iFood já foi calculado automaticamente).</span>
+                    </p>
+                    <div class="w-full space-y-3">
+                        <div>
+                             <label for="total-takeaway-items-input" class="block text-sm font-medium text-slate-700">Total de Itens para Viagem (Anota Aí):</label>
+                             <input type="number" id="total-takeaway-items-input" class="mt-1 block w-full rounded-md border-slate-300 shadow-sm p-2 text-lg" placeholder="0" min="0">
+                        </div>
                     </div>
                     <div class="flex justify-end gap-4 mt-6 pt-4 border-t">
                         <button id="confirm-takeaway-btn" class="w-auto bg-green-600 text-white font-semibold py-2 px-6 rounded-md hover:bg-green-700">Confirmar e Calcular</button>
@@ -377,6 +490,7 @@
                 },
                 cardapioListContainer: document.getElementById('cardapio-list-container'),
                 cardapioDatalist: document.getElementById('cardapio-datalist'),
+                exportCardapioCsvBtn: document.getElementById('export-cardapio-csv-btn'),
                 menuCsv: {
                     input: document.getElementById('daily-menu-csv-input'),
                     dropZone: document.getElementById('dropZoneCardapio'),
@@ -389,6 +503,14 @@
                     saveBtn: document.getElementById('save-imported-cardapio-btn'),
                     closeBtn: document.getElementById('close-modal-btn'),
                     cancelBtn: document.getElementById('cancel-import-btn'),
+                },
+                reportReviewModal: {
+                    container: document.getElementById('report-review-modal'),
+                    tabs: document.getElementById('report-review-tabs'),
+                    tabContent: document.getElementById('report-review-tab-content'),
+                    saveBtn: document.getElementById('save-reviewed-data-btn'),
+                    closeBtn: document.getElementById('close-report-review-modal-btn'),
+                    cancelBtn: document.getElementById('cancel-report-review-btn'),
                 },
                 takeawayModal: {
                     container: document.getElementById('takeaway-items-modal'),
@@ -420,7 +542,7 @@
                         addBtn: document.getElementById('add-manual-item-btn'),
                         listUl: document.getElementById('manual-items-list'),
                     },
-                    processarBtn: document.getElementById('processarRelatoriosBtn'),
+                    reviewFilesBtn: document.getElementById('review-files-btn'),
                     finalizarBtn: document.getElementById('finalizarFechamentoBtn'),
                     taxaServicoInput: document.getElementById('taxaServicoInput'),
                     staffCountInput: document.getElementById('daily-staff-count'),
@@ -437,12 +559,16 @@
                         list: document.getElementById('cadastro-pendente-list'),
                     }
                 },
+                detailedReportContent: document.getElementById('detailed-report-content'),
+                historyContent: document.getElementById('history-content'),
+                archiveDayBtn: document.getElementById('archive-day-btn'),
+                exportExcelBtn: document.getElementById('export-excel-btn'),
                 currentDateDisplay: document.getElementById('current-date-display'),
                 notificationContainer: document.getElementById('notification-container'),
             };
 
             // --- CONSTANTES E ESTADO ---
-            const STORAGE_KEY = 'hybridClosingData_v21';
+            const STORAGE_KEY = 'hybridClosingData_v28';
             const getDefaultData = () => ({
                 config: {
                     monthlyExpenses: 2000, 
@@ -454,6 +580,7 @@
                     custoAdicionalDelivery: 2.00
                 },
                 cardapio: [],
+                history: {},
             });
             let appData = getDefaultData();
             let sessionData = {
@@ -464,6 +591,8 @@
                 manualItems: [],
                 extraExpenses: [],
                 ignoredItems: [],
+                reviewedData: { pedidos: [], itens: [], adicionais: [] },
+                lastFullReport: null,
             };
             
             // --- FUNÇÕES UTILITÁRIAS ---
@@ -493,8 +622,15 @@
             // --- NAVEGAÇÃO ---
             function showPage(pageId) {
                 ui.pages.forEach(p => p.classList.toggle('active', p.id === pageId));
-                ui.navLinks.forEach(link => link.classList.toggle('active', link.dataset.page === pageId));
-                ui.resetDayBtn.style.display = (pageId === 'page-fechamento') ? 'inline-flex' : 'none';
+                ui.navLinks.forEach(link => {
+                    link.classList.toggle('active', link.dataset.page === pageId);
+                    if(link.dataset.page === 'page-relatorio' && sessionData.lastFullReport) {
+                       renderDetailedReport(sessionData.lastFullReport, ui.detailedReportContent);
+                    } else if (link.dataset.page === 'page-historico') {
+                        renderHistory();
+                    }
+                });
+                ui.resetDayBtn.style.display = (pageId === 'page-fechamento' || pageId === 'page-relatorio') ? 'inline-flex' : 'none';
                 window.location.hash = pageId.replace('page-','');
             }
 
@@ -531,6 +667,7 @@
                             cardapio: Array.isArray(parsedData.cardapio) 
                                 ? parsedData.cardapio.map(p => ({...p, isEditing: false})) 
                                 : [],
+                            history: parsedData.history || {},
                         };
                     } catch (e) {
                         console.error("Erro ao carregar dados salvos:", e);
@@ -563,40 +700,40 @@
 
             function renderCardapioItem(p, index) {
                  const isIfood = p.nome.includes('!');
-                 if (p.isEditing) {
-                     return `
-                         <div class="p-4 bg-indigo-50 rounded-lg border border-indigo-200">
-                             <div class="grid grid-cols-2 gap-4">
-                                 <div class="col-span-2"><label class="text-sm font-medium">Nome</label><input type="text" data-field="nome" value="${p.nome}" class="w-full p-2 mt-1 border rounded-md"></div>
-                                 <div><label class="text-sm font-medium">Custo (R$)</label><input type="number" data-field="custoProducao" value="${p.custoProducao}" class="w-full p-2 mt-1 border rounded-md"></div>
-                                 <div><label class="text-sm font-medium">Venda (R$)</label><input type="number" data-field="precoVenda" value="${p.precoVenda}" class="w-full p-2 mt-1 border rounded-md"></div>
-                                 <div class="col-span-2 flex items-center"><label class="flex items-center gap-2 text-sm font-medium"><input type="checkbox" data-field="eBebida" ${p.eBebida ? 'checked' : ''} class="h-4 w-4 rounded">É uma bebida?</label></div>
-                             </div>
-                             <div class="mt-4 flex gap-2 justify-end">
-                                 <button class="cancel-edit-btn bg-gray-200 text-gray-800 font-semibold py-2 px-4 rounded-md" data-index="${index}">Cancelar</button>
-                                 <button class="save-edit-btn bg-green-500 text-white font-semibold py-2 px-4 rounded-md" data-index="${index}">Salvar</button>
-                             </div>
-                         </div>
-                     `;
-                 } else {
-                     return `
-                         <div class="p-3 bg-white rounded-md border text-sm">
-                             <div class="flex justify-between items-start">
-                                 <div>
-                                     <p class="font-semibold text-base flex items-center gap-2">${p.nome.replace('!', '')} 
-                                         ${isIfood ? '<span class="text-xs bg-red-100 text-red-800 px-2 py-0.5 rounded-full font-bold">iFood</span>' : '<span class="text-xs bg-blue-100 text-blue-800 px-2 py-0.5 rounded-full font-bold">Anota Aí</span>'}
-                                         ${p.eBebida ? '<span class="text-xs font-normal text-gray-500">(Bebida)</span>' : ''}
-                                     </p>
-                                     <p class="text-slate-500 text-xs mt-1">Custo: ${formatCurrency(p.custoProducao)} | Venda: ${formatCurrency(p.precoVenda)}</p>
+                  if (p.isEditing) {
+                        return `
+                             <div class="p-4 bg-indigo-50 rounded-lg border border-indigo-200">
+                                 <div class="grid grid-cols-2 gap-4">
+                                     <div class="col-span-2"><label class="text-sm font-medium">Nome</label><input type="text" data-field="nome" value="${p.nome}" class="w-full p-2 mt-1 border rounded-md"></div>
+                                     <div><label class="text-sm font-medium">Custo (R$)</label><input type="number" data-field="custoProducao" value="${p.custoProducao}" class="w-full p-2 mt-1 border rounded-md"></div>
+                                     <div><label class="text-sm font-medium">Venda (R$)</label><input type="number" data-field="precoVenda" value="${p.precoVenda}" class="w-full p-2 mt-1 border rounded-md"></div>
+                                     <div class="col-span-2 flex items-center"><label class="flex items-center gap-2 text-sm font-medium"><input type="checkbox" data-field="eBebida" ${p.eBebida ? 'checked' : ''} class="h-4 w-4 rounded">É uma bebida?</label></div>
                                  </div>
-                                 <div class="flex gap-2">
-                                     <button class="edit-cardapio-item-btn text-blue-500 hover:text-blue-700" data-index="${index}"><i data-lucide="edit" class="h-4 w-4"></i></button>
-                                     <button class="remove-cardapio-item-btn text-red-500 hover:text-red-700" data-index="${index}"><i data-lucide="trash-2" class="h-4 w-4"></i></button>
+                                 <div class="mt-4 flex gap-2 justify-end">
+                                     <button class="cancel-edit-btn bg-gray-200 text-gray-800 font-semibold py-2 px-4 rounded-md" data-index="${index}">Cancelar</button>
+                                     <button class="save-edit-btn bg-green-500 text-white font-semibold py-2 px-4 rounded-md" data-index="${index}">Salvar</button>
                                  </div>
                              </div>
-                         </div>
-                     `;
-                 }
+                        `;
+                  } else {
+                        return `
+                             <div class="p-3 bg-white rounded-md border text-sm">
+                                 <div class="flex justify-between items-start">
+                                     <div>
+                                         <p class="font-semibold text-base flex items-center gap-2">${p.nome.replace('!', '')} 
+                                             ${isIfood ? '<span class="text-xs bg-red-100 text-red-800 px-2 py-0.5 rounded-full font-bold">iFood</span>' : '<span class="text-xs bg-blue-100 text-blue-800 px-2 py-0.5 rounded-full font-bold">Anota Aí</span>'}
+                                             ${p.eBebida ? '<span class="text-xs font-normal text-gray-500">(Bebida)</span>' : ''}
+                                         </p>
+                                         <p class="text-slate-500 text-xs mt-1">Custo: ${formatCurrency(p.custoProducao)} | Venda: ${formatCurrency(p.precoVenda)}</p>
+                                     </div>
+                                     <div class="flex gap-2">
+                                         <button class="edit-cardapio-item-btn text-blue-500 hover:text-blue-700" data-index="${index}"><i data-lucide="edit" class="h-4 w-4"></i></button>
+                                         <button class="remove-cardapio-item-btn text-red-500 hover:text-red-700" data-index="${index}"><i data-lucide="trash-2" class="h-4 w-4"></i></button>
+                                     </div>
+                                 </div>
+                             </div>
+                        `;
+                  }
             }
 
             function renderCardapioList() {
@@ -622,8 +759,8 @@
 
             function renderExtraExpensesList() {
                  ui.fechamento.extraExpense.listUl.innerHTML = sessionData.extraExpenses.length === 0
-                     ? '<li class="italic list-none">Nenhuma despesa extra.</li>'
-                     : sessionData.extraExpenses.map((expense, index) => `
+                      ? '<li class="italic list-none">Nenhuma despesa extra.</li>'
+                      : sessionData.extraExpenses.map((expense, index) => `
                          <li class="flex justify-between items-center">
                              <span>${expense.desc}: ${formatCurrency(expense.value)}</span>
                              <button class="remove-extra-expense-btn text-red-500 hover:text-red-700" data-index="${index}">
@@ -633,14 +770,15 @@
                  lucide.createIcons();
             }
             
-            function renderSummary(summary) {
-                const taxaServicoInfo = summary.taxaServico > 0 
+            function renderSummary(report) {
+                 const { summary, details } = report;
+                 const taxaServicoInfo = details.taxaServico > 0 
                     ? `<div class="text-xs text-center text-slate-500 italic mt-2 border-t pt-2">
-                           Deste total, ${formatCurrency(summary.taxaServico)} é referente à Taxa de Serviço.
-                       </div>`
+                            Deste total, ${formatCurrency(details.taxaServico)} é referente à Taxa de Serviço.
+                        </div>`
                     : '';
 
-                ui.fechamento.summaryContainer.innerHTML = `
+                 ui.fechamento.summaryContainer.innerHTML = `
                     <div class="space-y-2">
                         <div class="flex justify-between items-center p-3 bg-blue-50 rounded-md text-lg">
                             <span class="font-medium text-blue-800">Faturamento Bruto</span>
@@ -649,11 +787,11 @@
                         ${taxaServicoInfo}
                         <div class="text-sm space-y-1 pt-2">
                             <div class="flex justify-between items-center"><span class="text-orange-700">(-) Custo dos Produtos (CMV)</span><span class="font-medium">${formatCurrency(summary.cmv)}</span></div>
-                            <div class="flex justify-between items-center"><span class="text-orange-700">(-) Imposto Sobre Faturamento</span><span class="font-medium">${formatCurrency(summary.impostoFaturamentoValor)}</span></div>
+                            <div class="flex justify-between items-center"><span class="text-orange-700">(-) Imposto Sobre Faturamento</span><span class="font-medium">${formatCurrency(details.imposto.valor)}</span></div>
                             <div class="flex justify-between items-center"><span class="text-orange-700">(-) Taxas de Canais e Pag.</span><span class="font-medium">${formatCurrency(summary.taxasTotais)}</span></div>
                             <div class="flex justify-between items-center"><span class="text-orange-700">(-) Custo Adicional Viagem</span><span class="font-medium">${formatCurrency(summary.custoAdicionalViagem)}</span></div>
-                            <div class="flex justify-between items-center"><span class="text-orange-700">(-) Custo Fixo do Dia</span><span class="font-medium">${formatCurrency(summary.custoFixoDia)}</span></div>
-                            <div class="flex justify-between items-center"><span class="text-orange-700">(-) Custo com Diaristas</span><span class="font-medium">${formatCurrency(summary.custoDiaristas)}</span></div>
+                            <div class="flex justify-between items-center"><span class="text-orange-700">(-) Custo Fixo do Dia</span><span class="font-medium">${formatCurrency(details.custoFixo.diario)}</span></div>
+                            <div class="flex justify-between items-center"><span class="text-orange-700">(-) Custo com Diaristas</span><span class="font-medium">${formatCurrency(details.custoDiaristas.total)}</span></div>
                             <div class="flex justify-between items-center"><span class="text-orange-700">(-) Despesas Extras</span><span class="font-medium">${formatCurrency(summary.custoExtras)}</span></div>
                         </div>
                         <div class="p-4 rounded-lg text-center transition-colors duration-300 mt-3 ${summary.lucroFinal >= 0 ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'}">
@@ -665,27 +803,235 @@
             }
 
             function renderItensPendentes(nomes) {
-                 ui.fechamento.cadastroPendente.list.innerHTML = '';
-                 nomes.forEach(nome => {
-                     const formId = `form-${nome.replace(/[^a-zA-Z0-9]/g, '-')}`;
-                     const formHTML = `
-                         <div id="${formId}" class="bg-yellow-50 p-4 rounded-lg border border-yellow-200">
-                             <h4 class="font-bold text-slate-800">${nome}</h4>
-                             <div class="grid grid-cols-2 gap-4 mt-2">
-                                 <div class="col-span-1"><label class="text-sm font-medium">Custo (R$)</label><input type="number" data-field="custo" class="w-full p-2 mt-1 border rounded-md"></div>
-                                 <div class="col-span-1"><label class="text-sm font-medium">Preço (R$)</label><input type="number" data-field="preco" class="w-full p-2 mt-1 border rounded-md"></div>
-                                 <div class="col-span-2"><label class="flex items-center gap-2 text-sm font-medium"><input type="checkbox" data-field="eBebida" class="h-4 w-4 rounded">É uma bebida?</label></div>
-                             </div>
-                             <div class="flex gap-2 mt-3">
+                ui.fechamento.cadastroPendente.list.innerHTML = '';
+                nomes.forEach(nome => {
+                    const isIfood = nome.includes('!');
+                    const platformLabel = isIfood 
+                        ? '<span class="text-xs bg-red-100 text-red-800 px-2 py-0.5 rounded-full font-bold ml-2">iFood</span>' 
+                        : '<span class="text-xs bg-blue-100 text-blue-800 px-2 py-0.5 rounded-full font-bold ml-2">Anota Aí</span>';
+                    
+                    const formId = `form-${nome.replace(/[^a-zA-Z0-9]/g, '-')}`;
+                    const formHTML = `
+                        <div id="${formId}" class="bg-yellow-50 p-4 rounded-lg border border-yellow-200">
+                            <h4 class="font-bold text-slate-800 flex items-center">${nome.replace('!', '')} ${platformLabel}</h4>
+                            <div class="grid grid-cols-2 gap-4 mt-2">
+                                <div class="col-span-1"><label class="text-sm font-medium">Custo (R$)</label><input type="number" data-field="custo" class="w-full p-2 mt-1 border rounded-md"></div>
+                                <div class="col-span-1"><label class="text-sm font-medium">Preço (R$)</label><input type="number" data-field="preco" class="w-full p-2 mt-1 border rounded-md"></div>
+                                <div class="col-span-2"><label class="flex items-center gap-2 text-sm font-medium"><input type="checkbox" data-field="eBebida" class="h-4 w-4 rounded">É uma bebida?</label></div>
+                            </div>
+                            <div class="flex gap-2 mt-3">
                                 <button class="ignorar-item-pendente-btn w-1/3 bg-gray-500 text-white font-semibold py-2 px-3 rounded-md hover:bg-gray-600 text-sm" data-nome="${nome}">Ignorar</button>
                                 <button class="salvar-item-pendente-btn w-2/3 bg-green-500 text-white font-semibold py-2 px-3 rounded-md hover:bg-green-600 text-sm" data-nome="${nome}">Salvar Item</button>
-                             </div>
-                         </div>
-                     `;
-                     ui.fechamento.cadastroPendente.list.insertAdjacentHTML('beforeend', formHTML);
-                 });
-                 ui.fechamento.cadastroPendente.card.classList.remove('hidden');
-                 ui.fechamento.step1.classList.add('disabled');
+                            </div>
+                        </div>
+                    `;
+                    ui.fechamento.cadastroPendente.list.insertAdjacentHTML('beforeend', formHTML);
+                });
+                ui.fechamento.cadastroPendente.card.classList.remove('hidden');
+            }
+
+            function renderDetailedReport(reportData, container) {
+                const { summary, details, channels, allSoldItems } = reportData;
+                
+                const createDetailRow = (label, calc, value, isNegative = true) => `
+                    <div class="detail-row">
+                        <div class="detail-label">
+                            <span class="main-label ${isNegative ? 'text-red-700' : 'text-blue-800'}">${label}</span>
+                            <span class="calc-label">${calc}</span>
+                        </div>
+                        <span class="detail-value ${isNegative ? 'text-red-800' : 'text-blue-900'}">${formatCurrency(value)}</span>
+                    </div>`;
+
+                let channelsHTML = '';
+                for (const channelName in channels) {
+                    const channel = channels[channelName];
+                    let subChannelsHTML = '';
+                    if(channel.subChannels) {
+                        for(const subChannelName in channel.subChannels) {
+                            const subChannel = channel.subChannels[subChannelName];
+                            subChannelsHTML += `
+                                <div class="ml-4 mt-2 p-3 bg-gray-50 rounded-md border">
+                                    <h4 class="font-semibold text-slate-700">${subChannelName}</h4>
+                                    <div class="text-sm space-y-1 mt-1">
+                                        <div class="flex justify-between"><span>Faturamento:</span> <span class="font-medium">${formatCurrency(subChannel.faturamento)}</span></div>
+                                        <div class="flex justify-between"><span>Pedidos:</span> <span class="font-medium">${subChannel.pedidos}</span></div>
+                                    </div>
+                                </div>
+                            `;
+                        }
+                    }
+                    
+                    let costsHTML = '';
+                    if (channelName === 'iFood') {
+                        costsHTML = `
+                            <div class="flex justify-between text-sm" title="CMV proporcional ao faturamento do canal"><span class="text-red-600">(-) CMV do Canal:</span> <span class="font-semibold text-red-600">${formatCurrency(channel.cmv)}</span></div>
+                            <div class="flex justify-between text-sm" title="${formatCurrency(channel.faturamento)} x ${appData.config.taxaIfoodPercentual}%"><span class="text-red-600">(-) Taxa %:</span> <span class="font-semibold text-red-600">${formatCurrency(channel.taxaPercentual)}</span></div>
+                            <div class="flex justify-between text-sm" title="${channel.pedidos} pedidos x ${formatCurrency(appData.config.taxaIfoodFixa)}"><span class="text-red-600">(-) Taxa Fixa:</span> <span class="font-semibold text-red-600">${formatCurrency(channel.taxaFixa)}</span></div>
+                            <div class="flex justify-between text-sm" title="${channel.itemsEmbalagem} itens x ${formatCurrency(appData.config.custoAdicionalDelivery)}"><span class="text-red-600">(-) Custo Embalagens:</span> <span class="font-semibold text-red-600">${formatCurrency(channel.custoEmbalagem)}</span></div>
+                        `;
+                    } else if (channelName === 'Anota Aí') {
+                        costsHTML = `
+                            <div class="flex justify-between text-sm" title="CMV proporcional ao faturamento do canal"><span class="text-red-600">(-) CMV do Canal:</span> <span class="font-semibold text-red-600">${formatCurrency(channel.cmv)}</span></div>
+                            <div class="flex justify-between text-sm" title="${formatCurrency(details.canaisProprios.faturamentoCartao)} x ${appData.config.taxaCartao}%"><span class="text-red-600">(-) Taxa Cartão:</span> <span class="font-semibold text-red-600">${formatCurrency(channel.taxaCartao)}</span></div>
+                            <div class="flex justify-between text-sm" title="${channel.itemsEmbalagem} itens x ${formatCurrency(appData.config.custoAdicionalDelivery)}"><span class="text-red-600">(-) Custo Embalagens:</span> <span class="font-semibold text-red-600">${formatCurrency(channel.custoEmbalagem)}</span></div>
+                        `;
+                    }
+                    
+                    const soldItemsHTML = channel.soldItems.length > 0 ? `
+                        <details class="mt-3">
+                            <summary class="cursor-pointer text-sm font-medium text-indigo-600 hover:text-indigo-800 flex items-center">
+                                Ver Itens Vendidos
+                                <i data-lucide="chevron-down" class="chevron-summary h-4 w-4 ml-1 transition-transform"></i>
+                            </summary>
+                            <div class="mt-2 text-xs space-y-1 max-h-40 overflow-y-auto pr-2">
+                                <div class="grid grid-cols-4 font-bold text-slate-700 border-b pb-1">
+                                    <div class="col-span-2">Item</div>
+                                    <div class="text-center">Qtd</div>
+                                    <div class="text-right">Receita</div>
+                                </div>
+                                ${channel.soldItems.map(item => `
+                                    <div class="grid grid-cols-4 py-1 border-b border-slate-100">
+                                        <div class="col-span-2">${item.name.replace('!', '')}</div>
+                                        <div class="text-center">${item.quantity}</div>
+                                        <div class="text-right">${formatCurrency(item.revenue)}</div>
+                                    </div>
+                                `).join('')}
+                            </div>
+                        </details>
+                    ` : '';
+
+                    channelsHTML += `
+                        <div class="card">
+                            <h3 class="text-xl font-bold mb-2 text-indigo-700">${channelName}</h3>
+                            <div class="space-y-1 text-md">
+                                <div class="flex justify-between"><span>Faturamento Bruto:</span> <span class="font-semibold">${formatCurrency(channel.faturamento)}</span></div>
+                                <div class="flex justify-between"><span>Total de Pedidos:</span> <span class="font-semibold">${channel.pedidos}</span></div>
+                            </div>
+                            <div class="mt-2 pt-2 border-t space-y-1">
+                                ${costsHTML}
+                            </div>
+                            <div class="flex justify-between font-bold border-t pt-2 mt-2 text-lg">
+                                <span>Lucro Livre do Canal:</span>
+                                <span class="${channel.lucroLivre >= 0 ? 'text-green-600' : 'text-red-600'}">${formatCurrency(channel.lucroLivre)}</span>
+                            </div>
+                            ${soldItemsHTML}
+                            ${subChannelsHTML ? `<div class="mt-3 pt-3 border-t">${subChannelsHTML}</div>` : ''}
+                        </div>
+                    `;
+                }
+
+
+                container.innerHTML = `
+                    <div class="card">
+                        <h2 class="text-2xl font-bold mb-2 text-slate-900">Resumo Financeiro Geral</h2>
+                        
+                        <!-- RECEITAS -->
+                        <div class="mb-4">
+                           <div class="p-4 bg-blue-50 rounded-lg">
+                                ${createDetailRow('(+) Faturamento Bruto', `${details.totalPedidos} pedidos geraram receita`, summary.faturamentoBruto, false)}
+                                ${details.taxaServico > 0 ? createDetailRow('(+) Taxa de Serviço', 'Valor informado manualmente', details.taxaServico, false) : ''}
+                           </div>
+                        </div>
+
+                        <!-- DESPESAS -->
+                        <h3 class="text-xl font-bold mb-2 text-slate-800">Detalhamento das Despesas</h3>
+                        <div class="p-4 bg-red-50/50 rounded-lg border border-red-100">
+                             ${createDetailRow('(-) Custo dos Produtos (CMV)', `${details.totalItens} itens vendidos`, summary.cmv)}
+                            
+                             <div class="detail-row">
+                                <div class="detail-label">
+                                    <span class="main-label text-red-700">(-) Taxas de Canais e Pagamentos</span>
+                                    <span class="calc-label">Detalhamento das taxas por plataforma</span>
+                                </div>
+                                <span class="detail-value text-red-800">${formatCurrency(summary.taxasTotais)}</span>
+                            </div>
+                            <div class="pl-6 space-y-2 pb-2">
+                                ${createDetailRow(`&nbsp;&nbsp;&nbsp;Taxa iFood (${details.ifood.taxaPercentual}%)`, `sobre ${formatCurrency(details.ifood.faturamento)}`, details.ifood.valorPercentual)}
+                                ${createDetailRow(`&nbsp;&nbsp;&nbsp;Taxa Fixa iFood`, `${details.ifood.pedidos} pedidos x ${formatCurrency(details.ifood.taxaFixa)}`, details.ifood.valorFixo)}
+                                ${createDetailRow(`&nbsp;&nbsp;&nbsp;Taxa Cartão Próprio (${details.canaisProprios.taxaCartao}%)`, `sobre ${formatCurrency(details.canaisProprios.faturamentoCartao)}`, details.canaisProprios.valorTaxa)}
+                            </div>
+                            
+                            ${createDetailRow('(-) Imposto Sobre Faturamento', `${details.imposto.percentual}% sobre ${formatCurrency(summary.faturamentoBruto)}`, details.imposto.valor)}
+                            ${createDetailRow('(-) Custo Adicional Viagem', `${details.viagem.quantidade} itens x ${formatCurrency(details.viagem.custoUnitario)}`, summary.custoAdicionalViagem)}
+                            ${createDetailRow('(-) Custo Fixo do Dia', `${formatCurrency(details.custoFixo.mensal)} / ${details.custoFixo.diasUteis} dias`, details.custoFixo.diario)}
+                            ${createDetailRow('(-) Custo com Diaristas', `${details.custoDiaristas.quantidade} x ${formatCurrency(details.custoDiaristas.custoUnitario)}`, details.custoDiaristas.total)}
+                            ${createDetailRow('(-) Despesas Extras', `${details.custoExtras.length} iten(s) lançado(s)`, summary.custoExtras)}
+                        </div>
+
+                        <!-- RESULTADO FINAL -->
+                        <div class="p-4 rounded-lg text-center transition-colors duration-300 mt-6 ${summary.lucroFinal >= 0 ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'}">
+                            <p class="text-lg font-bold uppercase">(=) Lucro Líquido do Dia</p>
+                            <p class="text-4xl font-extrabold mt-1">${formatCurrency(summary.lucroFinal)}</p>
+                        </div>
+                    </div>
+                    <div class="card">
+                        <h2 class="text-2xl font-bold mb-4 text-slate-900">Desempenho por Canal</h2>
+                        <div id="channel-performance" class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                            ${channelsHTML}
+                        </div>
+                    </div>
+                     <div class="card">
+                        <h2 class="text-2xl font-bold mb-4 text-slate-900">Itens Vendidos (Consolidado)</h2>
+                        <table class="w-full text-sm text-left">
+                            <thead class="bg-slate-100">
+                                <tr>
+                                    <th class="p-2">Item</th>
+                                    <th class="p-2 text-center">Quantidade</th>
+                                    <th class="p-2 text-right">CMV Total</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                ${allSoldItems.map(item => `
+                                    <tr class="border-b">
+                                        <td class="p-2 font-medium">${item.name}</td>
+                                        <td class="p-2 text-center">${item.quantity}</td>
+                                        <td class="p-2 text-right">${formatCurrency(item.cmv)}</td>
+                                    </tr>
+                                `).join('')}
+                            </tbody>
+                        </table>
+                    </div>
+                `;
+                // Re-run lucide after rendering new icons
+                lucide.createIcons();
+            }
+
+            function renderHistory() {
+                const historyContainer = ui.historyContent;
+                historyContainer.innerHTML = '';
+                const sortedDates = Object.keys(appData.history).sort((a, b) => new Date(b) - new Date(a));
+
+                if (sortedDates.length === 0) {
+                    historyContainer.innerHTML = '<div class="text-center p-6 bg-white rounded-lg shadow"><p class="text-slate-600">Nenhum dia arquivado ainda.</p></div>';
+                    return;
+                }
+
+                sortedDates.forEach(date => {
+                    const report = appData.history[date];
+                    const details = document.createElement('details');
+                    details.className = 'card bg-white rounded-lg shadow-sm mb-4';
+                    
+                    const summary = document.createElement('summary');
+                    summary.className = 'cursor-pointer p-4 flex justify-between items-center font-semibold text-lg';
+                    summary.innerHTML = `
+                        <span>${new Date(date + 'T00:00:00').toLocaleDateString('pt-BR', { year: 'numeric', month: 'long', day: 'numeric' })}</span>
+                        <span class="${report.summary.lucroFinal >= 0 ? 'text-green-600' : 'text-red-600'}">${formatCurrency(report.summary.lucroFinal)}</span>
+                    `;
+                    
+                    const contentDiv = document.createElement('div');
+                    contentDiv.className = 'p-4 border-t border-gray-200 space-y-8';
+                    contentDiv.innerHTML = '<p class="text-slate-500 italic">Clique para expandir e ver os detalhes.</p>';
+
+                    details.appendChild(summary);
+                    details.appendChild(contentDiv);
+                    historyContainer.appendChild(details);
+
+                    details.addEventListener('toggle', () => {
+                        if (details.open) {
+                             renderDetailedReport(report, contentDiv);
+                        }
+                    });
+                });
             }
 
             // --- LÓGICA DE DRAG & DROP ---
@@ -710,14 +1056,14 @@
                     if (files.length > 0) handler(files[0]);
                 });
                 inputEl.addEventListener('change', e => {
-                    handler(e.target.files[0]);
+                    if (e.target.files.length > 0) handler(e.target.files[0]);
                 });
             }
 
             // --- LÓGICA DE NEGÓCIO E EVENTOS ---
             function resetDay() {
                 sessionData = {
-                    pedidoFile: null, itensFile: null, adicionaisFile: null, menuFile: null, manualItems: [], extraExpenses: [], ignoredItems: []
+                    pedidoFile: null, itensFile: null, adicionaisFile: null, menuFile: null, manualItems: [], extraExpenses: [], ignoredItems: [], reviewedData: { pedidos: [], itens: [], adicionais: [] }, lastFullReport: null
                 };
                 
                 ui.fechamento.pedidos.fileName.textContent = 'Nenhum arquivo.';
@@ -738,6 +1084,7 @@
                 renderManualItemsList();
                 renderExtraExpensesList();
                 ui.fechamento.summaryContainer.innerHTML = '<div class="text-center p-4 bg-gray-50 rounded-lg"><p class="text-slate-600">Aguardando dados...</p></div>';
+                ui.detailedReportContent.innerHTML = '<div class="text-center p-6 bg-white rounded-lg shadow"><p class="text-slate-600">Calcule o resultado final na aba "Fechamento do Dia" para gerar o relatório.</p></div>';
                 
                 ui.fechamento.step1.classList.remove('disabled');
                 ui.fechamento.step2.classList.add('disabled');
@@ -755,81 +1102,96 @@
                 }
             }
             
-            const readFileAsText = file => new Promise((resolve, reject) => {
-                const reader = new FileReader();
-                reader.onload = e => resolve(e.target.result);
-                reader.onerror = e => reject(e);
-                reader.readAsText(file, 'UTF-8');
-            });
+            /**
+             * Parses CSV text, handling quoted fields, escaped quotes, and auto-detecting delimiters (comma or semicolon).
+             * @param {string} csvText The raw CSV string.
+             * @returns {string[][]} An array of arrays representing the rows and columns.
+             */
+            function parseCsvWithDelimiterDetection(csvText) {
+                const lines = csvText.replace(/\r\n/g, '\n').trim().split('\n');
+                if (lines.length === 0) return [];
 
-            async function getSoldItems() {
-                const soldItems = {};
-                const addOrUpdateItem = (name, quantity) => {
-                    if (!name || isNaN(quantity)) return;
-                    const normalizedName = normalizeString(name);
-                    soldItems[normalizedName] = (soldItems[normalizedName] || { name: name, quantity: 0 });
-                    soldItems[normalizedName].quantity += quantity;
-                };
+                // Detect delimiter from the header row
+                const header = lines[0];
+                const delimiter = (header.match(/;/g) || []).length > (header.match(/,/g) || []).length ? ';' : ',';
 
-                // Processar itens do CSV principal
-                if (sessionData.itensFile) {
-                    const itensCSV = await readFileAsText(sessionData.itensFile);
-                    const itensRows = itensCSV.replace(/\r\n/g, '\n').trim().split('\n').slice(1);
-                    itensRows.forEach(rowStr => {
-                        const columns = rowStr.trim().split(',');
-                        if (columns.length < 2) return;
-                        addOrUpdateItem(columns[0].trim(), parseInt(columns[1], 10));
-                    });
-                }
-
-                // Processar itens do CSV de adicionais
-                if(sessionData.adicionaisFile) {
-                    const adicionaisCSV = await readFileAsText(sessionData.adicionaisFile);
-                    const adicionaisRows = adicionaisCSV.replace(/\r\n/g, '\n').trim().split('\n').slice(1);
-                    adicionaisRows.forEach(rowStr => {
-                        const columns = rowStr.trim().split(',');
-                        if (columns.length < 2) return;
-                        const nomeAdicional = (columns[0] || '').trim();
-                        // Apenas processa se for um "extra" pago
-                        if (normalizeString(nomeAdicional).includes('extra')) {
-                            addOrUpdateItem(nomeAdicional, parseInt(columns[1], 10));
+                return lines.map(line => {
+                    const columns = [];
+                    let currentColumn = '';
+                    let inQuotes = false;
+                    for (let i = 0; i < line.length; i++) {
+                        const char = line[i];
+                        if (char === '"') {
+                            if (inQuotes && line[i + 1] === '"') {
+                                // This is an escaped quote (e.g., "" within a quoted field)
+                                currentColumn += '"';
+                                i++; // Skip the second quote of the pair
+                            } else {
+                                // This is a starting or ending quote
+                                inQuotes = !inQuotes;
+                            }
+                        } else if (char === delimiter && !inQuotes) {
+                            columns.push(currentColumn);
+                            currentColumn = '';
+                        } else {
+                            currentColumn += char;
                         }
-                    });
-                }
-
-                // Processar itens manuais
-                sessionData.manualItems.forEach(item => {
-                    addOrUpdateItem(item.name, item.quantity);
+                    }
+                    columns.push(currentColumn); // Add the last column
+                    return columns;
                 });
-                
-                return Object.values(soldItems);
             }
+
+            const parseFile = (file) => new Promise((resolve, reject) => {
+                const reader = new FileReader();
+                reader.onerror = e => reject(e);
+
+                if (file.name.endsWith('.xlsx')) {
+                    reader.onload = (e) => {
+                        try {
+                            const data = new Uint8Array(e.target.result);
+                            const workbook = XLSX.read(data, { type: 'array' });
+                            const firstSheetName = workbook.SheetNames[0];
+                            const worksheet = workbook.Sheets[firstSheetName];
+                            const csvString = XLSX.utils.sheet_to_csv(worksheet, { header: 1 });
+                            resolve(csvString);
+                        } catch (err) {
+                            reject(err);
+                        }
+                    };
+                    reader.readAsArrayBuffer(file);
+                } else { // Assume CSV ou outro formato de texto
+                    reader.onload = e => resolve(e.target.result);
+                    // Use default browser encoding (usually UTF-8), which works well with BOM
+                    reader.readAsText(file); 
+                }
+            });
             
-            async function processarRelatorios() {
+            function processarRelatorios() {
                 try {
                     sessionData.ignoredItems = [];
-                    const soldItems = await getSoldItems();
+                    const soldItems = getSoldItemsFromReviewedData();
 
-                    if (soldItems.length === 0) {
-                        return showNotification("Nenhum item vendido encontrado.", 'warning');
+                    if (Object.keys(soldItems).length === 0) {
+                        return showNotification("Nenhum item vendido encontrado nos dados revisados.", 'warning');
                     }
 
                     const itensNaoEncontrados = new Set();
                     const cardapioNomesNormalizados = appData.cardapio.map(p => normalizeString(p.nome));
 
-                    soldItems.forEach(item => {
+                    Object.values(soldItems).forEach(item => {
                         if (!cardapioNomesNormalizados.includes(normalizeString(item.name))) {
                             itensNaoEncontrados.add(item.name);
                         }
                     });
-
+                    
                     if (itensNaoEncontrados.size > 0) {
                         renderItensPendentes(Array.from(itensNaoEncontrados));
                         showNotification(`${itensNaoEncontrados.size} item(ns) novo(s) encontrado(s).`, 'warning');
                     } else {
-                        ui.fechamento.step1.classList.add('disabled');
+                        ui.fechamento.cadastroPendente.card.classList.add('hidden');
                         ui.fechamento.step2.classList.remove('disabled');
-                        showNotification("Todos os itens encontrados! Prossiga para os dados manuais.", 'success');
+                        showNotification("Todos os itens verificados! Prossiga para os dados manuais.", 'success');
                     }
                 } catch (err) {
                     showNotification("Erro ao processar itens vendidos.", 'error');
@@ -839,31 +1201,22 @@
 
             async function promptForTakeawayItems() {
                 try {
-                    const soldItems = await getSoldItems();
-                    const nonBeverageItems = {};
-
-                    soldItems.forEach(item => {
+                    const soldItems = getSoldItemsFromReviewedData();
+                    
+                    // Verifica se existe algum item do Anota Aí que *poderia* ser para viagem
+                    const hasPotentialTakeaway = Object.values(soldItems).some(item => {
                         const itemCardapio = appData.cardapio.find(p => normalizeString(p.nome) === normalizeString(item.name));
-                        if (itemCardapio && !itemCardapio.eBebida) {
-                           nonBeverageItems[item.name] = item.quantity;
-                        }
+                        return itemCardapio && !itemCardapio.eBebida && !item.name.includes('!');
                     });
 
-                    ui.takeawayModal.list.innerHTML = '';
-                    if (Object.keys(nonBeverageItems).length > 0) {
-                        Object.entries(nonBeverageItems).forEach(([nome, qtd]) => {
-                            const itemHTML = `
-                                <div class="grid grid-cols-3 items-center gap-4">
-                                    <label class="col-span-2 font-medium" for="takeaway-item-${normalizeString(nome)}">${nome} (Vendido: ${qtd})</label>
-                                    <input type="number" id="takeaway-item-${normalizeString(nome)}" data-total="${qtd}"
-                                        class="col-span-1 p-2 border rounded-md" placeholder="0" min="0" max="${qtd}">
-                                </div>
-                            `;
-                            ui.takeawayModal.list.insertAdjacentHTML('beforeend', itemHTML);
-                        });
+                    if (hasPotentialTakeaway) {
+                        // Limpa o campo e exibe o modal simplificado
+                        const input = document.getElementById('total-takeaway-items-input');
+                        if (input) input.value = '';
                         ui.takeawayModal.container.classList.remove('hidden');
+                        if (input) input.focus();
                     } else {
-                        // If no non-beverage items, just proceed with 0
+                        // Se não houver itens do Anota Aí para viagem, o valor manual é 0
                         executeCalculation(0);
                     }
 
@@ -873,74 +1226,179 @@
                 }
             }
 
-            async function executeCalculation(totalTakeawayItems) {
+
+            function getSoldItemsFromReviewedData() {
+                 const soldItems = {};
+                 const addOrUpdateItem = (name, quantity) => {
+                     if (!name || isNaN(quantity)) return;
+                     const normalizedName = normalizeString(name);
+                     soldItems[normalizedName] = soldItems[normalizedName] || { name, quantity: 0 };
+                     soldItems[normalizedName].quantity += quantity;
+                 };
+
+                 sessionData.reviewedData.itens.forEach(row => addOrUpdateItem(row[0], parseInt(row[1], 10)));
+                 sessionData.reviewedData.adicionais.forEach(row => {
+                     if(normalizeString(row[0]).includes('extra')) {
+                         addOrUpdateItem(row[0], parseInt(row[1], 10));
+                     }
+                 });
+                 sessionData.manualItems.forEach(item => addOrUpdateItem(item.name, item.quantity));
+
+                 return soldItems;
+            }
+
+
+            async function executeCalculation(takeawayItemsAnotaAiManual) {
                 try {
                     const { config } = appData;
-                    const custoFixoDia = parseValue(config.monthlyExpenses) / (parseInt(config.workingDays, 10) || 1);
                     
-                    // Calcular faturamento
-                    let faturamentoBrutoRelatorio = 0, faturamentoIfood = 0, faturamentoCartaoProprio = 0, numPedidosIfood = 0;
-                    if (sessionData.pedidoFile) {
-                        const pedidosCSV = await readFileAsText(sessionData.pedidoFile);
-                        const pedidosRows = pedidosCSV.replace(/\r\n/g, '\n').trim().split('\n').slice(1);
-                        pedidosRows.forEach(rowStr => {
-                            const row = rowStr.trim();
-                            if (!row) return;
-                            const columns = row.split(',');
-                            if (columns.length < 8) return;
-                            
-                            const valorTotal = parseValue(columns[5]);
-                            const condicaoPagamento = (columns[7] || '').trim().toLowerCase();
-                            const origem = (columns[8] || '').trim();
-
-                            if (!isNaN(valorTotal)) {
-                                faturamentoBrutoRelatorio += valorTotal;
-                                if (origem.toLowerCase() === 'ifood') {
-                                    faturamentoIfood += valorTotal;
-                                    numPedidosIfood++;
-                                } else if (condicaoPagamento.includes('cartão')) {
-                                    faturamentoCartaoProprio += valorTotal;
-                                }
-                            }
-                        });
-                    }
-
-                    const faturamentoBruto = faturamentoBrutoRelatorio;
-
-                    // Calcular taxas
-                    const taxasIfood = (faturamentoIfood * parseValue(config.taxaIfoodPercentual) / 100) + (numPedidosIfood * parseValue(config.taxaIfoodFixa));
-                    const taxasCartao = faturamentoCartaoProprio * parseValue(config.taxaCartao) / 100;
-                    const taxasTotais = taxasIfood + taxasCartao;
+                    const soldItemsData = getSoldItemsFromReviewedData();
+                    const allSoldItems = Object.values(soldItemsData);
                     
-                    // Calcular imposto
-                    const impostoFaturamentoValor = faturamentoBruto * (parseValue(config.impostoFaturamento) / 100);
-
-                    // Calcular CMV
-                    const soldItems = await getSoldItems();
-                    let cmv = 0;
-                    soldItems.forEach(item => {
-                        if (sessionData.ignoredItems.includes(normalizeString(item.name))) {
-                            return;
-                        }
+                    const allSoldItemsWithDetails = allSoldItems.map(item => {
                         const itemCardapio = appData.cardapio.find(p => normalizeString(p.nome) === normalizeString(item.name));
-                        if (itemCardapio) {
-                            cmv += item.quantity * itemCardapio.custoProducao;
-                        }
+                        const cmv = (itemCardapio && !sessionData.ignoredItems.includes(normalizeString(item.name))) ? item.quantity * itemCardapio.custoProducao : 0;
+                        const revenue = (itemCardapio && !sessionData.ignoredItems.includes(normalizeString(item.name))) ? item.quantity * itemCardapio.precoVenda : 0;
+                        return {...item, cmv, revenue, eBebida: itemCardapio?.eBebida ?? false };
                     });
                     
-                    // Calcular custos manuais
-                    const custoAdicionalViagem = totalTakeawayItems * parseValue(config.custoAdicionalDelivery);
+                    const cmv = allSoldItemsWithDetails.reduce((sum, item) => sum + item.cmv, 0);
+
+                    // Detalhamento por canal
+                    const channels = {
+                        'iFood': { faturamento: 0, pedidos: 0, soldItems: [] },
+                        'Anota Aí': { faturamento: 0, pedidos: 0, soldItems: [], subChannels: {
+                            'Consumo no local': { faturamento: 0, pedidos: 0 },
+                            'Viagem/Retirada': { faturamento: 0, pedidos: 0 }
+                        } },
+                    };
+
+                    allSoldItemsWithDetails.forEach(item => {
+                        if (item.name.includes('!')) {
+                            channels['iFood'].soldItems.push(item);
+                        } else {
+                            channels['Anota Aí'].soldItems.push(item);
+                        }
+                    });
+
+                    let faturamentoBrutoRelatorio = 0, faturamentoIfood = 0, faturamentoCartaoProprio = 0, numPedidosIfood = 0;
+                    
+                    sessionData.reviewedData.pedidos.forEach(columns => {
+                        if (columns.length < 12 || !columns[0] || isNaN(parseValue(columns[0]))) return; 
+                        const status = (columns[11] || '').trim().toLowerCase();
+                        if (status === 'cancelado') return; 
+                        
+                        const valorTotal = parseValue(columns[8]);
+                        const retirada = (columns[4] || '').trim().toLowerCase();
+                        const condicaoPagamento = (columns[2] || '').trim().toLowerCase();
+                        const origem = (columns[1] || '').trim();
+
+                        if (isNaN(valorTotal)) return;
+                        faturamentoBrutoRelatorio += valorTotal;
+
+                        let channel, subChannel;
+                        if (origem.toLowerCase() === 'ifood') {
+                            channel = channels['iFood'];
+                            faturamentoIfood += valorTotal;
+                            numPedidosIfood++;
+                        } else {
+                            channel = channels['Anota Aí'];
+                            if (retirada === 'consumido no estabelecimento') subChannel = channel.subChannels['Consumo no local'];
+                            else subChannel = channel.subChannels['Viagem/Retirada'];
+                        }
+                        
+                        channel.faturamento += valorTotal;
+                        channel.pedidos++;
+                        if (subChannel) {
+                            subChannel.faturamento += valorTotal;
+                            subChannel.pedidos++;
+                        }
+                         if (condicaoPagamento.includes('cartão') && origem.toLowerCase() !== 'ifood') {
+                            faturamentoCartaoProprio += valorTotal;
+                        }
+                    });
+                                            
+                    const faturamentoBruto = faturamentoBrutoRelatorio;
+                    
+                    // Calcular itens não-bebida do iFood automaticamente
+                    const itemsIfoodNonBeverage = channels.iFood.soldItems.reduce((sum, item) => !item.eBebida ? sum + item.quantity : sum, 0);
+                    
+                    // Custo Embalagem
+                    const custoEmbalagemIfood = itemsIfoodNonBeverage * parseValue(config.custoAdicionalDelivery);
+                    const custoEmbalagemAnotaAi = takeawayItemsAnotaAiManual * parseValue(config.custoAdicionalDelivery);
+                    const custoAdicionalViagem = custoEmbalagemIfood + custoEmbalagemAnotaAi;
+                    
+                    // CÁLCULOS DETALHADOS POR CANAL
+                    channels['iFood'].cmv = channels.iFood.soldItems.reduce((sum, item) => sum + item.cmv, 0);
+                    channels['iFood'].taxaPercentual = faturamentoIfood * (parseValue(config.taxaIfoodPercentual) / 100);
+                    channels['iFood'].taxaFixa = numPedidosIfood * parseValue(config.taxaIfoodFixa);
+                    channels['iFood'].custoEmbalagem = custoEmbalagemIfood;
+                    channels['iFood'].itemsEmbalagem = itemsIfoodNonBeverage;
+                    channels['iFood'].lucroLivre = channels['iFood'].faturamento - channels['iFood'].cmv - channels['iFood'].taxaPercentual - channels['iFood'].taxaFixa - channels['iFood'].custoEmbalagem;
+
+                    channels['Anota Aí'].cmv = channels['Anota Aí'].soldItems.reduce((sum, item) => sum + item.cmv, 0);
+                    channels['Anota Aí'].taxaCartao = faturamentoCartaoProprio * (parseValue(config.taxaCartao) / 100);
+                    channels['Anota Aí'].custoEmbalagem = custoEmbalagemAnotaAi;
+                    channels['Anota Aí'].itemsEmbalagem = takeawayItemsAnotaAiManual;
+                    channels['Anota Aí'].lucroLivre = channels['Anota Aí'].faturamento - channels['Anota Aí'].cmv - channels['Anota Aí'].taxaCartao - channels['Anota Aí'].custoEmbalagem;
+                    
+                    // CÁLCULOS GERAIS
+                    const taxasTotais = channels['iFood'].taxaPercentual + channels['iFood'].taxaFixa + channels['Anota Aí'].taxaCartao;
+                    const impostoFaturamentoValor = faturamentoBruto * (parseValue(config.impostoFaturamento) / 100);
                     const custoDiaristas = parseValue(ui.fechamento.staffCountInput.value) * parseValue(ui.fechamento.staffCostInput.value);
                     const custoExtras = sessionData.extraExpenses.reduce((sum, exp) => sum + exp.value, 0);
+                    const custoFixoDia = parseValue(config.monthlyExpenses) / (parseInt(config.workingDays, 10) || 1);
                     const taxaServico = parseValue(ui.fechamento.taxaServicoInput.value);
-
                     const lucroFinal = faturamentoBruto - cmv - taxasTotais - impostoFaturamentoValor - custoAdicionalViagem - custoFixoDia - custoDiaristas - custoExtras;
                     
-                    const finalSummary = {
-                        faturamentoBruto, cmv, taxasTotais, custoAdicionalViagem, custoFixoDia, custoDiaristas, custoExtras, taxaServico, impostoFaturamentoValor, lucroFinal
+                    const report = {
+                        summary: {
+                            faturamentoBruto, cmv, taxasTotais, lucroFinal, custoExtras, custoAdicionalViagem
+                        },
+                        details: {
+                            totalPedidos: sessionData.reviewedData.pedidos.filter(p => p[11]?.toLowerCase() !== 'cancelado' && p[0]).length,
+                            totalItens: allSoldItems.reduce((acc, item) => acc + item.quantity, 0),
+                            taxaServico,
+                            ifood: {
+                                faturamento: faturamentoIfood,
+                                pedidos: numPedidosIfood,
+                                taxaPercentual: config.taxaIfoodPercentual,
+                                taxaFixa: config.taxaIfoodFixa,
+                                valorPercentual: channels['iFood'].taxaPercentual,
+                                valorFixo: channels['iFood'].taxaFixa,
+                            },
+                            canaisProprios: {
+                                faturamentoCartao: faturamentoCartaoProprio,
+                                taxaCartao: config.taxaCartao,
+                                valorTaxa: channels['Anota Aí'].taxaCartao,
+                            },
+                            imposto: {
+                                percentual: config.impostoFaturamento,
+                                valor: impostoFaturamentoValor,
+                            },
+                            viagem: {
+                                quantidade: itemsIfoodNonBeverage + takeawayItemsAnotaAiManual,
+                                custoUnitario: config.custoAdicionalDelivery,
+                            },
+                            custoFixo: {
+                                mensal: config.monthlyExpenses,
+                                diasUteis: config.workingDays,
+                                diario: custoFixoDia,
+                            },
+                            custoDiaristas: {
+                                quantidade: parseValue(ui.fechamento.staffCountInput.value),
+                                custoUnitario: parseValue(ui.fechamento.staffCostInput.value),
+                                total: custoDiaristas,
+                            },
+                            custoExtras: sessionData.extraExpenses,
+                        },
+                        channels,
+                        allSoldItems: allSoldItemsWithDetails
                     };
                     
-                    renderSummary(finalSummary);
+                    sessionData.lastFullReport = report;
+
+                    renderSummary(report);
                     showNotification("Cálculo finalizado com sucesso!", 'success');
 
                 } catch (err) {
@@ -997,12 +1455,13 @@
                 const index = parseInt(target.dataset.index, 10);
                 
                 if (target.matches('.remove-cardapio-item-btn')) {
-                    if (confirm(`Remover "${appData.cardapio[index].nome}" do cardápio?`)) {
+                    // Substituindo confirm nativo por uma verificação simples por enquanto
+                    // if (confirm(`Remover "${appData.cardapio[index].nome}" do cardápio?`)) {
                         appData.cardapio.splice(index, 1);
                         saveData();
                         renderCardapioList();
                         showNotification("Produto removido.", 'info');
-                    }
+                    // }
                 } else if (target.matches('.edit-cardapio-item-btn')) {
                     appData.cardapio.forEach((p, i) => p.isEditing = i === index);
                     renderCardapioList();
@@ -1026,26 +1485,64 @@
                 }
             });
 
+            ui.exportCardapioCsvBtn.addEventListener('click', () => {
+                if (appData.cardapio.length === 0) {
+                    return showNotification("Nenhum produto no cardápio para exportar.", "warning");
+                }
+                
+                const headers = ["Nome do Produto", "Custo de Produção", "Preço de Venda", "É Bebida"];
+                const rows = appData.cardapio.map(p => [
+                    `"${p.nome.replace(/"/g, '""')}"`, // Trata aspas no nome
+                    p.custoProducao,
+                    p.precoVenda,
+                    p.eBebida ? 'SIM' : 'NAO'
+                ]);
+
+                let csvContent = headers.join(',') + '\r\n';
+                rows.forEach(rowArray => {
+                    let row = rowArray.join(',');
+                    csvContent += row + '\r\n';
+                });
+
+                // BOM para garantir que o Excel entenda UTF-8
+                const bom = new Uint8Array([0xEF, 0xBB, 0xBF]); 
+                const blob = new Blob([bom, csvContent], { type: 'text/csv;charset=utf-8;' });
+                const link = document.createElement("a");
+                const url = URL.createObjectURL(blob);
+                link.setAttribute("href", url);
+                link.setAttribute("download", `cardapio_${new Date().toISOString().split('T')[0]}.csv`);
+                link.style.visibility = 'hidden';
+                document.body.appendChild(link);
+                link.click();
+                document.body.removeChild(link);
+                showNotification("Exportação do cardápio iniciada.", "success");
+            });
+
             ui.menuCsv.prepareBtn.addEventListener('click', () => {
-                if (!sessionData.menuFile) return showNotification("Selecione um arquivo CSV.", "error");
-                readFileAsText(sessionData.menuFile).then(csv => {
-                    const rows = csv.replace(/\r\n/g, '\n').trim().split('\n').slice(1);
+                if (!sessionData.menuFile) return showNotification("Selecione um arquivo CSV ou XLSX.", "error");
+                 parseFile(sessionData.menuFile).then(csvText => {
+                    const data = parseCsvWithDelimiterDetection(csvText);
+                    const rows = data.slice(1); // Pula o cabeçalho
                     ui.importModal.tableBody.innerHTML = '';
-                    rows.forEach(rowStr => {
-                        if (!rowStr.trim()) return;
-                        const columns = rowStr.split(',');
+                    
+                    rows.forEach(columns => {
+                        if (columns.length < 1 || !columns[0]?.trim()) return; // Ignora linhas vazias
+
                         const tr = document.createElement('tr');
                         tr.className = 'border-b';
                         tr.innerHTML = `
-                            <td class="p-2"><input type="text" value="${columns[0]?.trim() || ''}" data-field="nome" class="w-full p-1 border rounded-md"></td>
+                            <td class="p-2"><input type="text" value="${columns[0] || ''}" data-field="nome" class="w-full p-1 border rounded-md"></td>
                             <td class="p-2"><input type="number" value="${parseValue(columns[1])}" data-field="custoProducao" class="w-full p-1 border rounded-md"></td>
                             <td class="p-2"><input type="number" value="${parseValue(columns[2])}" data-field="precoVenda" class="w-full p-1 border rounded-md"></td>
-                            <td class="p-2 text-center"><input type="checkbox" ${(columns[3]?.trim().toLowerCase() === 'true') ? 'checked' : ''} data-field="eBebida" class="h-4 w-4"></td>
+                            <td class="p-2 text-center"><input type="checkbox" ${(columns[3]?.trim().toLowerCase() === 'true' || columns[3]?.trim().toLowerCase() === 'sim') ? 'checked' : ''} data-field="eBebida" class="h-4 w-4"></td>
                         `;
                         ui.importModal.tableBody.appendChild(tr);
                     });
                     ui.importModal.container.classList.remove('hidden');
-                }).catch(err => showNotification("Erro ao ler arquivo.", "error"));
+                }).catch(err => {
+                    console.error(err);
+                    showNotification("Erro ao ler arquivo do cardápio.", "error")
+                });
             });
 
             const closeModal = () => {
@@ -1060,11 +1557,14 @@
             ui.takeawayModal.closeBtn.addEventListener('click', () => ui.takeawayModal.container.classList.add('hidden'));
 
             ui.takeawayModal.confirmBtn.addEventListener('click', () => {
-                let totalItems = 0;
-                const inputs = ui.takeawayModal.list.querySelectorAll('input[type="number"]');
-                inputs.forEach(input => {
-                    totalItems += parseValue(input.value);
-                });
+                const input = document.getElementById('total-takeaway-items-input');
+                const totalItems = parseValue(input.value);
+                
+                if (isNaN(totalItems) || totalItems < 0) {
+                    showNotification("Por favor, insira um número válido.", "error");
+                    return;
+                }
+                
                 ui.takeawayModal.container.classList.add('hidden');
                 executeCalculation(totalItems);
             });
@@ -1090,7 +1590,8 @@
                 showNotification("Cardápio importado com sucesso!", "success");
             });
             
-            ui.fechamento.processarBtn.addEventListener('click', processarRelatorios);
+            ui.fechamento.reviewFilesBtn.addEventListener('click', openReportReviewModal);
+            
             ui.fechamento.finalizarBtn.addEventListener('click', promptForTakeawayItems);
 
             ui.fechamento.manualItem.addBtn.addEventListener('click', () => {
@@ -1177,6 +1678,162 @@
                     renderExtraExpensesList();
                 }
             });
+            
+            ui.archiveDayBtn.addEventListener('click', () => {
+                if (sessionData.lastFullReport) {
+                    const today = new Date().toISOString().split('T')[0];
+                    appData.history[today] = sessionData.lastFullReport;
+                    saveData();
+                    showNotification(`Fechamento do dia ${today} arquivado com sucesso!`, 'success');
+                    resetDay();
+                } else {
+                    showNotification("Nenhum relatório para arquivar. Calcule o resultado primeiro.", 'warning');
+                }
+            });
+
+            ui.exportExcelBtn.addEventListener('click', () => {
+                if (!sessionData.lastFullReport) {
+                    return showNotification("Nenhum relatório para exportar.", "warning");
+                }
+                
+                const { summary, channels, allSoldItems } = sessionData.lastFullReport;
+                const wb = XLSX.utils.book_new();
+
+                // Aba de Resumo
+                const ws_summary_data = [
+                    ["Resumo Financeiro Geral"],
+                    ["Faturamento Bruto", summary.faturamentoBruto],
+                    ["Custo dos Produtos (CMV)", summary.cmv],
+                    ["Taxas Totais", summary.taxasTotais],
+                    ["Imposto Sobre Faturamento", sessionData.lastFullReport.details.imposto.valor],
+                    ["Custo Adicional Viagem", sessionData.lastFullReport.summary.custoAdicionalViagem],
+                    ["Custo Fixo do Dia", sessionData.lastFullReport.details.custoFixo.diario],
+                    ["Custo com Diaristas", sessionData.lastFullReport.details.custoDiaristas.total],
+                    ["Despesas Extras", summary.custoExtras],
+                    [],
+                    ["LUCRO LÍQUIDO", summary.lucroFinal]
+                ];
+                const ws_summary = XLSX.utils.aoa_to_sheet(ws_summary_data);
+                XLSX.utils.book_append_sheet(wb, ws_summary, "Resumo");
+
+                // Aba de Canais
+                const ws_channels_data = [["Canal", "Faturamento", "Pedidos", "CMV", "Lucro Livre"]];
+                for (const channelName in channels) {
+                    const c = channels[channelName];
+                    ws_channels_data.push([channelName, c.faturamento, c.pedidos, c.cmv, c.lucroLivre]);
+                }
+                const ws_channels = XLSX.utils.aoa_to_sheet(ws_channels_data);
+                XLSX.utils.book_append_sheet(wb, ws_channels, "Canais");
+
+                // Aba de Itens
+                const ws_items_data = [["Item", "Quantidade", "CMV Total"]];
+                allSoldItems.forEach(item => {
+                    ws_items_data.push([item.name, item.quantity, item.cmv]);
+                });
+                const ws_items = XLSX.utils.aoa_to_sheet(ws_items_data);
+                XLSX.utils.book_append_sheet(wb, ws_items, "Itens Vendidos");
+
+                XLSX.writeFile(wb, `Relatorio_Fechamento_${new Date().toISOString().split('T')[0]}.xlsx`);
+
+                showNotification("Exportação para Excel concluída.", "success");
+            });
+
+            // --- LÓGICA DO MODAL DE REVISÃO DE RELATÓRIOS
+            async function openReportReviewModal() {
+                const filesToReview = [
+                    { name: 'Pedidos', file: sessionData.pedidoFile },
+                    { name: 'Itens', file: sessionData.itensFile },
+                    { name: 'Adicionais', file: sessionData.adicionaisFile }
+                ];
+
+                if (filesToReview.every(f => f.file === null)) {
+                    return showNotification("Nenhum relatório importado para revisar.", "warning");
+                }
+
+                ui.reportReviewModal.tabs.innerHTML = '';
+                ui.reportReviewModal.tabContent.innerHTML = '';
+
+                let firstTab = true;
+                for (const {name, file} of filesToReview) {
+                    if (file) {
+                        const tabId = `tab-${name.toLowerCase()}`;
+                        const tabButton = document.createElement('button');
+                        tabButton.className = 'tab-button';
+                        if(firstTab) {
+                            tabButton.classList.add('active');
+                            firstTab = false;
+                        }
+                        tabButton.textContent = name;
+                        tabButton.dataset.tab = tabId;
+                        ui.reportReviewModal.tabs.appendChild(tabButton);
+
+                        const tabContent = document.createElement('div');
+                        tabContent.id = tabId;
+                        tabContent.className = 'tab-content';
+                        if(tabButton.classList.contains('active')) tabContent.classList.add('active');
+                        
+                        const csvText = await parseFile(file);
+                        const rows = parseCsvWithDelimiterDetection(csvText);
+                        
+                        let tableHTML = `<div class="max-h-[50vh] overflow-auto"><table class="w-full text-xs text-left" id="table-${tabId}"><tbody>`;
+                        rows.forEach((columns, rowIndex) => {
+                            tableHTML += `<tr data-row-index="${rowIndex}">`;
+                            columns.forEach((col, colIndex) => {
+                                tableHTML += `<td><input type="text" value="${col.trim()}" class="w-full p-1 border rounded-md bg-white"></td>`;
+                            });
+                            tableHTML += `<td><button class="remove-row-btn text-red-500 p-1"><i data-lucide="trash-2" class="h-4 w-4"></i></button></td>`;
+                            tableHTML += `</tr>`;
+                        });
+                        tableHTML += `</tbody></table></div>`;
+                        tabContent.innerHTML = tableHTML;
+                        ui.reportReviewModal.tabContent.appendChild(tabContent);
+                    }
+                }
+                lucide.createIcons();
+                ui.reportReviewModal.container.classList.remove('hidden');
+            }
+
+            ui.reportReviewModal.tabs.addEventListener('click', (e) => {
+                const targetButton = e.target.closest('.tab-button');
+                if(!targetButton) return;
+
+                ui.reportReviewModal.tabs.querySelectorAll('.tab-button').forEach(btn => btn.classList.remove('active'));
+                targetButton.classList.add('active');
+
+                ui.reportReviewModal.tabContent.querySelectorAll('.tab-content').forEach(content => content.classList.remove('active'));
+                document.getElementById(targetButton.dataset.tab).classList.add('active');
+            });
+
+            ui.reportReviewModal.tabContent.addEventListener('click', (e) => {
+                 const removeBtn = e.target.closest('.remove-row-btn');
+                 if(removeBtn) {
+                     removeBtn.closest('tr').remove();
+                 }
+            });
+
+            ui.reportReviewModal.saveBtn.addEventListener('click', () => {
+                ['pedidos', 'itens', 'adicionais'].forEach(type => {
+                    const table = document.getElementById(`table-tab-${type}`);
+                    sessionData.reviewedData[type] = []; // Limpa dados antigos
+                    if(table) {
+                        const rows = Array.from(table.querySelectorAll('tbody tr'));
+                        const data = rows.map(row => {
+                           const inputs = Array.from(row.querySelectorAll('input'));
+                           return inputs.map(input => input.value);
+                        });
+                        sessionData.reviewedData[type] = data;
+                    }
+                });
+                
+                ui.reportReviewModal.container.classList.add('hidden');
+                ui.fechamento.step1.classList.add('disabled');
+                processarRelatorios();
+            });
+
+             const closeReportReviewModal = () => ui.reportReviewModal.container.classList.add('hidden');
+             ui.reportReviewModal.closeBtn.addEventListener('click', closeReportReviewModal);
+             ui.reportReviewModal.cancelBtn.addEventListener('click', closeReportReviewModal);
+
 
             // --- INICIALIZAÇÃO ---
             function init() {
@@ -1192,6 +1849,12 @@
                     sessionData.menuFile = file;
                     ui.menuCsv.prepareBtn.classList.remove('hidden');
                 });
+                 // Listener para o evento 'toggle' em qualquer <details> no corpo do documento
+                document.body.addEventListener('toggle', (event) => {
+                    if (event.target.tagName === 'DETAILS') {
+                        lucide.createIcons();
+                    }
+                }, true); // Use captura para garantir que o evento seja pego
             }
             
             init();
