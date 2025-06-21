@@ -14,6 +14,12 @@
     <style>
         html { scroll-behavior: smooth; }
         body { font-family: 'Inter', sans-serif; }
+        #app-container.loading {
+            display: none;
+        }
+        #loading-screen {
+            display: flex;
+        }
         section.page { display: none; }
         section.page.active { display: block; }
         input[type="number"] { -moz-appearance: textfield; }
@@ -126,258 +132,264 @@
     </style>
 </head>
 <body class="bg-slate-100 text-slate-800">
+    <div id="loading-screen" class="fixed inset-0 bg-slate-100 flex flex-col items-center justify-center z-[100]">
+        <div class="animate-spin rounded-full h-16 w-16 border-b-2 border-indigo-600"></div>
+        <p class="mt-4 text-lg font-semibold text-slate-700">Conectando à nuvem...</p>
+    </div>
 
-    <header class="bg-white/80 backdrop-blur-lg shadow-md sticky top-0 z-50">
-        <nav class="container mx-auto px-4 md:px-8 flex justify-between items-center h-16">
-            <div class="flex items-center space-x-2 sm:space-x-4">
-                <a href="#fechamento" data-page="page-fechamento" class="nav-link text-slate-600 hover:text-indigo-600 font-semibold text-sm sm:text-base">Fechamento do Dia</a>
-                <a href="#relatorio" data-page="page-relatorio" class="nav-link text-slate-600 hover:text-indigo-600 font-semibold text-sm sm:text-base">Relatório Detalhado</a>
-                <a href="#historico" data-page="page-historico" class="nav-link text-slate-600 hover:text-indigo-600 font-semibold text-sm sm:text-base">Histórico</a>
-                <a href="#cardapio" data-page="page-cardapio" class="nav-link text-slate-600 hover:text-indigo-600 font-semibold text-sm sm:text-base">Cardápio</a>
-            </div>
-             <button id="reset-day-btn" class="hidden sm:inline-flex items-center bg-orange-500 text-white font-bold py-2 px-4 rounded-lg hover:bg-orange-600 transition-all transform hover:scale-105">
-                <i data-lucide="refresh-cw" class="h-5 w-5 mr-2"></i>
-                Reiniciar Fechamento
-            </button>
-        </nav>
-    </header>
+    <div id="app-container" class="loading">
+        <header class="bg-white/80 backdrop-blur-lg shadow-md sticky top-0 z-50">
+            <nav class="container mx-auto px-4 md:px-8 flex justify-between items-center h-16">
+                <div class="flex items-center space-x-2 sm:space-x-4">
+                    <a href="#fechamento" data-page="page-fechamento" class="nav-link text-slate-600 hover:text-indigo-600 font-semibold text-sm sm:text-base">Fechamento do Dia</a>
+                    <a href="#relatorio" data-page="page-relatorio" class="nav-link text-slate-600 hover:text-indigo-600 font-semibold text-sm sm:text-base">Relatório Detalhado</a>
+                    <a href="#historico" data-page="page-historico" class="nav-link text-slate-600 hover:text-indigo-600 font-semibold text-sm sm:text-base">Histórico</a>
+                    <a href="#cardapio" data-page="page-cardapio" class="nav-link text-slate-600 hover:text-indigo-600 font-semibold text-sm sm:text-base">Cardápio</a>
+                </div>
+                 <button id="reset-day-btn" class="hidden sm:inline-flex items-center bg-orange-500 text-white font-bold py-2 px-4 rounded-lg hover:bg-orange-600 transition-all transform hover:scale-105">
+                    <i data-lucide="refresh-cw" class="h-5 w-5 mr-2"></i>
+                    Reiniciar Fechamento
+                </button>
+            </nav>
+        </header>
 
-    <main class="container mx-auto p-4 md:p-8 max-w-7xl">
+        <main class="container mx-auto p-4 md:p-8 max-w-7xl">
 
-        <!-- PÁGINA DE FECHAMENTO -->
-        <section id="page-fechamento" class="page">
-            <header class="text-center mb-8">
-                <h1 class="text-3xl md:text-4xl font-bold text-slate-900">Fechamento do Dia (<span id="current-date-display"></span>)</h1>
-                <p class="mt-2 text-md md:text-lg text-slate-600">Siga os passos para um fechamento de caixa rápido e preciso.</p>
-            </header>
+            <!-- PÁGINA DE FECHAMENTO -->
+            <section id="page-fechamento" class="page">
+                <header class="text-center mb-8">
+                    <h1 class="text-3xl md:text-4xl font-bold text-slate-900">Fechamento do Dia (<span id="current-date-display"></span>)</h1>
+                    <p class="mt-2 text-md md:text-lg text-slate-600">Siga os passos para um fechamento de caixa rápido e preciso.</p>
+                </header>
 
-            <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
-                <!-- Coluna Principal: Ações do Dia -->
-                <div class="lg:col-span-2 space-y-8">
-                    <div class="card">
-                        <h2 class="text-2xl font-bold mb-4 text-slate-800 flex items-center">
-                            <i data-lucide="calculator" class="h-8 w-8 mr-3 text-indigo-600"></i>
-                            Área de Fechamento Diário
-                        </h2>
-                        
-                        <!-- PASSO 1 -->
-                        <div id="step-1-container" class="step-container pt-4 border-t">
-                            <h3 class="text-xl font-semibold text-slate-700 mb-3 flex items-center">
-                                <span class="bg-indigo-600 text-white rounded-full h-8 w-8 text-lg font-bold flex items-center justify-center mr-3">1</span>
-                                Importar Relatórios & Vendas Manuais
-                            </h3>
-                            <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
-                                <div>
-                                    <p class="text-sm font-medium text-slate-600 mb-2">Relatório de Pedidos</p>
-                                    <label for="relatorioPedidosInput" id="dropZonePedidos" class="drop-zone flex justify-center w-full px-4 py-5 border-2 border-gray-300 border-dashed rounded-md cursor-pointer hover:border-indigo-400">
-                                        <div class="text-center"><i data-lucide="file-up" class="mx-auto h-10 w-10 text-gray-400"></i><p class="mt-1 text-sm text-gray-600">Arraste ou clique</p></div>
-                                    </label>
-                                    <input type="file" id="relatorioPedidosInput" accept=".csv, .xlsx" class="hidden"/>
-                                    <div id="fileNamePedidos" class="mt-2 text-xs text-center text-slate-500 font-medium">Nenhum arquivo.</div>
-                                </div>
-                                <div>
-                                    <p class="text-sm font-medium text-slate-600 mb-2">Relatório de Itens</p>
-                                    <label for="relatorioItensInput" id="dropZoneItens" class="drop-zone flex justify-center w-full px-4 py-5 border-2 border-gray-300 border-dashed rounded-md cursor-pointer hover:border-indigo-400">
-                                        <div class="text-center"><i data-lucide="file-up" class="mx-auto h-10 w-10 text-gray-400"></i><p class="mt-1 text-sm text-gray-600">Arraste ou clique</p></div>
-                                    </label>
-                                    <input type="file" id="relatorioItensInput" accept=".csv, .xlsx" class="hidden"/>
-                                    <div id="fileNameItens" class="mt-2 text-xs text-center text-slate-500 font-medium">Nenhum arquivo.</div>
-                                </div>
-                                <div>
-                                    <p class="text-sm font-medium text-slate-600 mb-2">Relatório de Adicionais</p>
-                                    <label for="relatorioAdicionaisInput" id="dropZoneAdicionais" class="drop-zone flex justify-center w-full px-4 py-5 border-2 border-gray-300 border-dashed rounded-md cursor-pointer hover:border-indigo-400">
-                                        <div class="text-center"><i data-lucide="file-up" class="mx-auto h-10 w-10 text-gray-400"></i><p class="mt-1 text-sm text-gray-600">Arraste ou clique</p></div>
-                                    </label>
-                                    <input type="file" id="relatorioAdicionaisInput" accept=".csv, .xlsx" class="hidden"/>
-                                    <div id="fileNameAdicionais" class="mt-2 text-xs text-center text-slate-500 font-medium">Nenhum arquivo.</div>
-                                </div>
-                            </div>
-
-                            <div class="card bg-slate-50 p-4 mt-6">
-                                <h4 class="text-md font-semibold text-slate-800 flex items-center mb-2"><i data-lucide="hand-coins" class="h-4 w-4 mr-2"></i>Adicionar Item Vendido Manualmente</h4>
-                                <div class="grid grid-cols-12 gap-2 items-end">
-                                    <div class="col-span-8">
-                                        <label class="text-xs font-medium">Nome do Item</label>
-                                        <input type="text" id="manual-item-name" list="cardapio-datalist" placeholder="Digite para buscar..." class="w-full p-2 mt-1 border rounded-md text-sm">
-                                        <datalist id="cardapio-datalist"></datalist>
-                                    </div>
-                                    <div class="col-span-4"><label class="text-xs font-medium">Quantidade</label><input type="number" id="manual-item-quantity" placeholder="1" class="w-full p-2 mt-1 border rounded-md text-sm"></div>
-                                </div>
-                                <button id="add-manual-item-btn" class="w-full mt-3 bg-blue-500 text-white font-semibold py-2 px-3 rounded-md hover:bg-blue-600 text-sm">Adicionar Item</button>
-                                <div class="mt-3">
-                                    <h5 class="font-medium text-slate-800 text-sm">Itens Manuais Adicionados:</h5>
-                                    <ul id="manual-items-list" class="mt-1 text-xs text-slate-600 list-disc list-inside max-h-20 overflow-y-auto p-2">
-                                        <li class="italic list-none">Nenhum item manual.</li>
-                                    </ul>
-                                </div>
-                           </div>
-
-                             <div class="mt-6 text-right">
-                                <button id="review-files-btn" class="bg-indigo-600 text-white font-semibold py-2 px-6 rounded-md hover:bg-indigo-700 flex items-center justify-center ml-auto">
-                                    Revisar Arquivos Importados <i data-lucide="arrow-right" class="h-5 w-5 ml-2"></i>
-                                </button>
-                            </div>
-                        </div>
-
-                        <!-- ALERTA DE ITENS PENDENTES -->
-                        <div id="cadastro-pendente-card" class="card border-l-4 border-yellow-400 hidden mt-6">
-                            <h2 class="text-2xl font-bold mb-2 text-yellow-600 flex items-center"><i data-lucide="alert-triangle" class="h-8 w-8 mr-3"></i> Ação Necessária: Itens Novos</h2>
-                            <p class="text-slate-600 mb-4">Encontramos itens que não estão no cardápio. Cadastre-os ou ignore-os para continuar.</p>
-                            <div id="cadastro-pendente-list" class="mt-4 space-y-6"></div>
-                        </div>
-
-                        <!-- PASSO 2 -->
-                         <div id="step-2-container" class="step-container disabled pt-6 border-t mt-6">
-                            <h3 class="text-xl font-semibold text-slate-700 mb-3 flex items-center">
-                                <span class="bg-indigo-600 text-white rounded-full h-8 w-8 text-lg font-bold flex items-center justify-center mr-3">2</span> Informar Dados Manuais
-                            </h3>
-                            <div>
-                                <label for="taxaServicoInput" class="block text-sm font-medium text-slate-700">Valor Total da Taxa de Serviço (R$)</label>
-                                <input type="number" id="taxaServicoInput" placeholder="0.00" class="mt-1 block w-full rounded-md border-slate-300 shadow-sm p-2">
-                            </div>
-
-                            <div class="card bg-slate-50 p-4 mt-6">
-                                <h4 class="text-md font-semibold text-slate-800 flex items-center mb-2"><i data-lucide="bike" class="h-4 w-4 mr-2"></i>Custo com Frete (Motoqueiro)</h4>
-                                <div>
-                                    <label for="frete-cost-input" class="block text-sm font-medium text-slate-700">Valor Total Pago no Dia (R$)</label>
-                                    <input type="number" id="frete-cost-input" placeholder="0.00" class="mt-1 block w-full rounded-md border-slate-300 shadow-sm p-2">
-                                </div>
-                            </div>
+                <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+                    <!-- Coluna Principal: Ações do Dia -->
+                    <div class="lg:col-span-2 space-y-8">
+                        <div class="card">
+                            <h2 class="text-2xl font-bold mb-4 text-slate-800 flex items-center">
+                                <i data-lucide="calculator" class="h-8 w-8 mr-3 text-indigo-600"></i>
+                                Área de Fechamento Diário
+                            </h2>
                             
-                            <div class="card bg-slate-50 p-4 mt-6">
-                                <h4 class="text-md font-semibold text-slate-800 flex items-center mb-2"><i data-lucide="users" class="h-4 w-4 mr-2"></i>Custo com Diaristas</h4>
-                                <div class="grid grid-cols-2 gap-2">
-                                    <div><label class="text-xs font-medium">Nº</label><input type="number" id="daily-staff-count" placeholder="0" class="w-full p-2 mt-1 border rounded-md text-sm"></div>
-                                    <div><label class="text-xs font-medium">Custo/Pessoa</label><input type="number" id="daily-staff-cost" placeholder="100" class="w-full p-2 mt-1 border rounded-md text-sm"></div>
+                            <!-- PASSO 1 -->
+                            <div id="step-1-container" class="step-container pt-4 border-t">
+                                <h3 class="text-xl font-semibold text-slate-700 mb-3 flex items-center">
+                                    <span class="bg-indigo-600 text-white rounded-full h-8 w-8 text-lg font-bold flex items-center justify-center mr-3">1</span>
+                                    Importar Relatórios & Vendas Manuais
+                                </h3>
+                                <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                                    <div>
+                                        <p class="text-sm font-medium text-slate-600 mb-2">Relatório de Pedidos</p>
+                                        <label for="relatorioPedidosInput" id="dropZonePedidos" class="drop-zone flex justify-center w-full px-4 py-5 border-2 border-gray-300 border-dashed rounded-md cursor-pointer hover:border-indigo-400">
+                                            <div class="text-center"><i data-lucide="file-up" class="mx-auto h-10 w-10 text-gray-400"></i><p class="mt-1 text-sm text-gray-600">Arraste ou clique</p></div>
+                                        </label>
+                                        <input type="file" id="relatorioPedidosInput" accept=".csv, .xlsx" class="hidden"/>
+                                        <div id="fileNamePedidos" class="mt-2 text-xs text-center text-slate-500 font-medium">Nenhum arquivo.</div>
+                                    </div>
+                                    <div>
+                                        <p class="text-sm font-medium text-slate-600 mb-2">Relatório de Itens</p>
+                                        <label for="relatorioItensInput" id="dropZoneItens" class="drop-zone flex justify-center w-full px-4 py-5 border-2 border-gray-300 border-dashed rounded-md cursor-pointer hover:border-indigo-400">
+                                            <div class="text-center"><i data-lucide="file-up" class="mx-auto h-10 w-10 text-gray-400"></i><p class="mt-1 text-sm text-gray-600">Arraste ou clique</p></div>
+                                        </label>
+                                        <input type="file" id="relatorioItensInput" accept=".csv, .xlsx" class="hidden"/>
+                                        <div id="fileNameItens" class="mt-2 text-xs text-center text-slate-500 font-medium">Nenhum arquivo.</div>
+                                    </div>
+                                    <div>
+                                        <p class="text-sm font-medium text-slate-600 mb-2">Relatório de Adicionais</p>
+                                        <label for="relatorioAdicionaisInput" id="dropZoneAdicionais" class="drop-zone flex justify-center w-full px-4 py-5 border-2 border-gray-300 border-dashed rounded-md cursor-pointer hover:border-indigo-400">
+                                            <div class="text-center"><i data-lucide="file-up" class="mx-auto h-10 w-10 text-gray-400"></i><p class="mt-1 text-sm text-gray-600">Arraste ou clique</p></div>
+                                        </label>
+                                        <input type="file" id="relatorioAdicionaisInput" accept=".csv, .xlsx" class="hidden"/>
+                                        <div id="fileNameAdicionais" class="mt-2 text-xs text-center text-slate-500 font-medium">Nenhum arquivo.</div>
+                                    </div>
+                                </div>
+    
+                                <div class="card bg-slate-50 p-4 mt-6">
+                                    <h4 class="text-md font-semibold text-slate-800 flex items-center mb-2"><i data-lucide="hand-coins" class="h-4 w-4 mr-2"></i>Adicionar Item Vendido Manualmente</h4>
+                                    <div class="grid grid-cols-12 gap-2 items-end">
+                                        <div class="col-span-8">
+                                            <label class="text-xs font-medium">Nome do Item</label>
+                                            <input type="text" id="manual-item-name" list="cardapio-datalist" placeholder="Digite para buscar..." class="w-full p-2 mt-1 border rounded-md text-sm">
+                                            <datalist id="cardapio-datalist"></datalist>
+                                        </div>
+                                        <div class="col-span-4"><label class="text-xs font-medium">Quantidade</label><input type="number" id="manual-item-quantity" placeholder="1" class="w-full p-2 mt-1 border rounded-md text-sm"></div>
+                                    </div>
+                                    <button id="add-manual-item-btn" class="w-full mt-3 bg-blue-500 text-white font-semibold py-2 px-3 rounded-md hover:bg-blue-600 text-sm">Adicionar Item</button>
+                                    <div class="mt-3">
+                                        <h5 class="font-medium text-slate-800 text-sm">Itens Manuais Adicionados:</h5>
+                                        <ul id="manual-items-list" class="mt-1 text-xs text-slate-600 list-disc list-inside max-h-20 overflow-y-auto p-2">
+                                            <li class="italic list-none">Nenhum item manual.</li>
+                                        </ul>
+                                    </div>
+                               </div>
+    
+                                 <div class="mt-6 text-right">
+                                    <button id="review-files-btn" class="bg-indigo-600 text-white font-semibold py-2 px-6 rounded-md hover:bg-indigo-700 flex items-center justify-center ml-auto">
+                                        Revisar Arquivos Importados <i data-lucide="arrow-right" class="h-5 w-5 ml-2"></i>
+                                    </button>
                                 </div>
                             </div>
-
-                            <div class="card bg-slate-50 p-4 mt-6">
-                                <h4 class="text-md font-semibold text-slate-800 flex items-center mb-2"><i data-lucide="plus-circle" class="h-4 w-4 mr-2"></i>Despesas Extras do Dia</h4>
-                                <div class="grid grid-cols-12 gap-2 items-end">
-                                    <div class="col-span-7"><label class="text-xs font-medium">Descrição</label><input type="text" id="extra-expense-desc" placeholder="Ex: Gelo" class="w-full p-2 mt-1 border rounded-md text-sm"></div>
-                                    <div class="col-span-5"><label class="text-xs font-medium">Valor (R$)</label><input type="number" id="extra-expense-value" placeholder="20.00" class="w-full p-2 mt-1 border rounded-md text-sm"></div>
+    
+                            <!-- ALERTA DE ITENS PENDENTES -->
+                            <div id="cadastro-pendente-card" class="card border-l-4 border-yellow-400 hidden mt-6">
+                                <h2 class="text-2xl font-bold mb-2 text-yellow-600 flex items-center"><i data-lucide="alert-triangle" class="h-8 w-8 mr-3"></i> Ação Necessária: Itens Novos</h2>
+                                <p class="text-slate-600 mb-4">Encontramos itens que não estão no cardápio. Cadastre-os ou ignore-os para continuar.</p>
+                                <div id="cadastro-pendente-list" class="mt-4 space-y-6"></div>
+                            </div>
+    
+                            <!-- PASSO 2 -->
+                             <div id="step-2-container" class="step-container disabled pt-6 border-t mt-6">
+                                <h3 class="text-xl font-semibold text-slate-700 mb-3 flex items-center">
+                                    <span class="bg-indigo-600 text-white rounded-full h-8 w-8 text-lg font-bold flex items-center justify-center mr-3">2</span> Informar Dados Manuais
+                                </h3>
+                                <div>
+                                    <label for="taxaServicoInput" class="block text-sm font-medium text-slate-700">Valor Total da Taxa de Serviço (R$)</label>
+                                    <input type="number" id="taxaServicoInput" placeholder="0.00" class="mt-1 block w-full rounded-md border-slate-300 shadow-sm p-2">
                                 </div>
-                               <button id="add-extra-expense-btn" class="w-full mt-3 bg-red-500 text-white font-semibold py-2 px-3 rounded-md hover:bg-red-600 text-sm">Adicionar Despesa</button>
-                                <div class="mt-3">
-                                    <h5 class="font-medium text-slate-800 text-sm">Lançadas:</h5>
-                                    <ul id="extra-expenses-list" class="mt-1 text-xs text-slate-600 list-disc list-inside max-h-20 overflow-y-auto p-2">
-                                        <li class="italic list-none">Nenhuma despesa extra.</li>
-                                    </ul>
+    
+                                <div class="card bg-slate-50 p-4 mt-6">
+                                    <h4 class="text-md font-semibold text-slate-800 flex items-center mb-2"><i data-lucide="bike" class="h-4 w-4 mr-2"></i>Custo com Frete (Motoqueiro)</h4>
+                                    <div>
+                                        <label for="frete-cost-input" class="block text-sm font-medium text-slate-700">Valor Total Pago no Dia (R$)</label>
+                                        <input type="number" id="frete-cost-input" placeholder="0.00" class="mt-1 block w-full rounded-md border-slate-300 shadow-sm p-2">
+                                    </div>
+                                </div>
+                                
+                                <div class="card bg-slate-50 p-4 mt-6">
+                                    <h4 class="text-md font-semibold text-slate-800 flex items-center mb-2"><i data-lucide="users" class="h-4 w-4 mr-2"></i>Custo com Diaristas</h4>
+                                    <div class="grid grid-cols-2 gap-2">
+                                        <div><label class="text-xs font-medium">Nº</label><input type="number" id="daily-staff-count" placeholder="0" class="w-full p-2 mt-1 border rounded-md text-sm"></div>
+                                        <div><label class="text-xs font-medium">Custo/Pessoa</label><input type="number" id="daily-staff-cost" placeholder="100" class="w-full p-2 mt-1 border rounded-md text-sm"></div>
+                                    </div>
+                                </div>
+    
+                                <div class="card bg-slate-50 p-4 mt-6">
+                                    <h4 class="text-md font-semibold text-slate-800 flex items-center mb-2"><i data-lucide="plus-circle" class="h-4 w-4 mr-2"></i>Despesas Extras do Dia</h4>
+                                    <div class="grid grid-cols-12 gap-2 items-end">
+                                        <div class="col-span-7"><label class="text-xs font-medium">Descrição</label><input type="text" id="extra-expense-desc" placeholder="Ex: Gelo" class="w-full p-2 mt-1 border rounded-md text-sm"></div>
+                                        <div class="col-span-5"><label class="text-xs font-medium">Valor (R$)</label><input type="number" id="extra-expense-value" placeholder="20.00" class="w-full p-2 mt-1 border rounded-md text-sm"></div>
+                                    </div>
+                                   <button id="add-extra-expense-btn" class="w-full mt-3 bg-red-500 text-white font-semibold py-2 px-3 rounded-md hover:bg-red-600 text-sm">Adicionar Despesa</button>
+                                    <div class="mt-3">
+                                        <h5 class="font-medium text-slate-800 text-sm">Lançadas:</h5>
+                                        <ul id="extra-expenses-list" class="mt-1 text-xs text-slate-600 list-disc list-inside max-h-20 overflow-y-auto p-2">
+                                            <li class="italic list-none">Nenhuma despesa extra.</li>
+                                        </ul>
+                                    </div>
+                                </div>
+                                  <div class="mt-6 text-right">
+                                    <button id="finalizarFechamentoBtn" class="bg-green-600 text-white font-bold text-lg py-3 px-8 rounded-lg hover:bg-green-700 transition shadow-lg flex items-center justify-center ml-auto">
+                                        <i data-lucide="check-circle" class="h-6 w-6 mr-3"></i> Confirmar Itens de Viagem e Calcular
+                                    </button>
                                 </div>
                             </div>
-                              <div class="mt-6 text-right">
-                                <button id="finalizarFechamentoBtn" class="bg-green-600 text-white font-bold text-lg py-3 px-8 rounded-lg hover:bg-green-700 transition shadow-lg flex items-center justify-center ml-auto">
-                                    <i data-lucide="check-circle" class="h-6 w-6 mr-3"></i> Confirmar Itens de Viagem e Calcular
+                        </div>
+                    </div>
+    
+                    <!-- Coluna Lateral: Resumo e Configs -->
+                    <div class="space-y-8">
+                        <div class="card sticky top-20">
+                            <h2 class="text-xl font-semibold mb-4 border-b pb-2 text-slate-900 flex items-center"><i data-lucide="bar-chart-2" class="h-5 w-5 mr-3 text-indigo-600"></i>Resumo do Dia</h2>
+                            <div id="summary-content" class="space-y-3">
+                                <div class="text-center p-4 bg-gray-50 rounded-lg"><p class="text-slate-600">Aguardando dados...</p></div>
+                            </div>
+                        </div>
+                        <div class="card">
+                            <details>
+                                <summary class="cursor-pointer text-xl font-semibold text-slate-900 flex items-center justify-between">
+                                    <span><i data-lucide="settings-2" class="h-5 w-5 mr-3 inline-block text-indigo-600"></i>Configurações</span>
+                                    <i data-lucide="chevron-down" class="chevron-summary h-5 w-5 transition-transform"></i>
+                                </summary>
+                                <div class="mt-4 pt-4 border-t space-y-4">
+                                    <div><label class="block text-sm font-medium">Despesas Fixas Mensais (R$)</label><input type="number" id="config-monthly-expenses" class="mt-1 block w-full p-2 border rounded-md"></div>
+                                    <div><label class="block text-sm font-medium">Dias Úteis no Mês</label><input type="number" id="config-working-days" class="mt-1 block w-full p-2 border rounded-md"></div>
+                                    <div><label class="block text-sm font-medium">Imposto Sobre Faturamento (%)</label><input type="number" id="config-imposto-faturamento" class="mt-1 block w-full p-2 border rounded-md"></div>
+                                    <div><label class="block text-sm font-medium">Taxa iFood (%)</label><input type="number" id="config-taxa-ifood-percentual" class="mt-1 block w-full p-2 border rounded-md"></div>
+                                    <div><label class="block text-sm font-medium">Taxa Fixa iFood (R$)</label><input type="number" id="config-taxa-ifood-fixa" class="mt-1 block w-full p-2 border rounded-md"></div>
+                                    <div><label class="block text-sm font-medium">Taxa Cartão (Canais Próprios, %)</label><input type="number" id="config-taxa-cartao" class="mt-1 block w-full p-2 border rounded-md"></div>
+                                    <div><label class="block text-sm font-medium">Custo Adicional por Item para Viagem (R$)</label><input type="number" id="config-custo-adicional-delivery" class="mt-1 block w-full p-2 border rounded-md"></div>
+                                    <div class="text-right mt-6"><button id="save-config-btn" class="bg-indigo-600 text-white font-semibold py-2 px-4 rounded-md hover:bg-indigo-700 flex items-center justify-center ml-auto btn-save-feedback"><i data-lucide="save" class="h-5 w-5 mr-2"></i><span class="btn-text">Salvar</span></button></div>
+                                </div>
+                            </details>
+                        </div>
+                    </div>
+                </div>
+            </section>
+    
+            <!-- PÁGINA DE RELATÓRIO DETALHADO -->
+            <section id="page-relatorio" class="page">
+                 <header class="text-center mb-8">
+                    <h1 class="text-3xl md:text-4xl font-bold text-slate-900">Relatório Detalhado do Dia</h1>
+                    <div class="mt-4 flex justify-center gap-4">
+                        <button id="export-excel-btn" class="bg-green-600 text-white font-semibold py-2 px-4 rounded-md hover:bg-green-700 flex items-center">
+                            <i data-lucide="file-spreadsheet" class="h-5 w-5 mr-2"></i> Exportar para Excel
+                        </button>
+                        <button id="archive-day-btn" class="bg-purple-600 text-white font-semibold py-2 px-4 rounded-md hover:bg-purple-700 flex items-center">
+                            <i data-lucide="archive" class="h-5 w-5 mr-2"></i> Concluir e Arquivar Dia
+                        </button>
+                    </div>
+                </header>
+                <div id="detailed-report-content" class="space-y-8">
+                    <div class="text-center p-6 bg-white rounded-lg shadow"><p class="text-slate-600">Calcule o resultado final na aba "Fechamento do Dia" para gerar o relatório.</p></div>
+                </div>
+            </section>
+    
+            <!-- PÁGINA DO HISTÓRICO -->
+            <section id="page-historico" class="page">
+                 <header class="text-center mb-8">
+                    <h1 class="text-3xl md:text-4xl font-bold text-slate-900">Histórico de Fechamentos</h1>
+                    <p class="mt-2 text-md md:text-lg text-slate-600">Consulte os relatórios detalhados de dias anteriores.</p>
+                </header>
+                <div id="history-content" class="space-y-4">
+                    <div class="text-center p-6 bg-white rounded-lg shadow"><p class="text-slate-600">Nenhum dia arquivado ainda.</p></div>
+                </div>
+            </section>
+    
+            <!-- PÁGINA DO CARDÁPIO -->
+            <section id="page-cardapio" class="page">
+                 <header class="text-center mb-8">
+                    <h1 class="text-3xl md:text-4xl font-bold text-slate-900">Gerenciamento do Cardápio</h1>
+                    <p class="mt-2 text-md md:text-lg text-slate-600">Adicione, edite e organize todos os seus produtos e preços.</p>
+                </header>
+                <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+                    <div class="lg:col-span-2 card">
+                        <h2 class="text-2xl font-semibold mb-4 border-b pb-2">Produtos Carregados</h2>
+                         <div id="cardapio-list-container" class="mt-2 text-sm text-slate-600 max-h-[70vh] overflow-y-auto p-2 space-y-2"></div>
+                    </div>
+                    <div class="space-y-8">
+                        <div class="card">
+                            <h2 class="text-2xl font-semibold mb-4 border-b pb-2">Adicionar Novo Produto</h2>
+                             <div class="space-y-4">
+                                <div><label class="text-sm font-medium">Nome do Produto <span class="text-xs text-gray-500">(use "!" no final para iFood)</span></label><input type="text" id="manual-product-name" class="w-full p-2 mt-1 border rounded-md"></div>
+                                <div><label class="text-sm font-medium">Custo de Produção (R$)</label><input type="number" id="manual-product-cost" class="w-full p-2 mt-1 border rounded-md"></div>
+                                 <div><label class="text-sm font-medium">Preço de Venda (R$)</label><input type="number" id="manual-product-price" class="w-full p-2 mt-1 border rounded-md"></div>
+                                <div class="pt-2"><label class="flex items-center gap-2 text-sm font-medium"><input type="checkbox" id="manual-product-is-bebida" class="h-4 w-4 rounded">É uma bebida?</label></div>
+                            </div>
+                            <button id="manual-add-product-btn" class="w-full mt-4 bg-green-500 text-white font-semibold py-2 px-4 rounded-md hover:bg-green-600">Salvar Produto</button>
+                        </div>
+                         <div class="card">
+                            <h2 class="text-2xl font-semibold mb-4 border-b pb-2">Gerenciar Cardápio</h2>
+                            <div class="flex flex-col gap-3 mt-4">
+                                <button id="export-cardapio-csv-btn" class="w-full bg-blue-500 text-white font-semibold py-2 px-4 rounded-md hover:bg-blue-600 flex items-center justify-center">
+                                    <i data-lucide="download" class="h-5 w-5 mr-2"></i> Exportar para CSV
                                 </button>
+                                <label for="daily-menu-csv-input" id="dropZoneCardapio" class="drop-zone flex justify-center w-full px-4 py-5 border-2 border-gray-300 border-dashed rounded-md cursor-pointer hover:border-indigo-400">
+                                    <div class="text-center">
+                                        <i data-lucide="upload-cloud" class="mx-auto h-10 w-10 text-gray-400"></i>
+                                        <p class="mt-1 text-sm text-gray-600">Importar em Massa (CSV)</p>
+                                        <p class="text-xs text-gray-500">Arraste ou clique para substituir</p>
+                                    </div>
+                                </label>
                             </div>
+                            <input type="file" id="daily-menu-csv-input" class="hidden" accept=".csv, .xlsx">
+                            <div id="fileNameCardapio" class="mt-2 text-xs text-center text-slate-600 font-medium"></div>
+                             <button id="prepare-import-btn" class="w-full mt-4 bg-indigo-500 text-white font-semibold py-2 px-4 rounded-md hover:bg-indigo-600 hidden">Revisar e Preparar Importação</button>
                         </div>
                     </div>
                 </div>
-
-                <!-- Coluna Lateral: Resumo e Configs -->
-                <div class="space-y-8">
-                    <div class="card sticky top-20">
-                        <h2 class="text-xl font-semibold mb-4 border-b pb-2 text-slate-900 flex items-center"><i data-lucide="bar-chart-2" class="h-5 w-5 mr-3 text-indigo-600"></i>Resumo do Dia</h2>
-                        <div id="summary-content" class="space-y-3">
-                            <div class="text-center p-4 bg-gray-50 rounded-lg"><p class="text-slate-600">Aguardando dados...</p></div>
-                        </div>
-                    </div>
-                    <div class="card">
-                        <details>
-                            <summary class="cursor-pointer text-xl font-semibold text-slate-900 flex items-center justify-between">
-                                <span><i data-lucide="settings-2" class="h-5 w-5 mr-3 inline-block text-indigo-600"></i>Configurações</span>
-                                <i data-lucide="chevron-down" class="chevron-summary h-5 w-5 transition-transform"></i>
-                            </summary>
-                            <div class="mt-4 pt-4 border-t space-y-4">
-                                <div><label class="block text-sm font-medium">Despesas Fixas Mensais (R$)</label><input type="number" id="config-monthly-expenses" class="mt-1 block w-full p-2 border rounded-md"></div>
-                                <div><label class="block text-sm font-medium">Dias Úteis no Mês</label><input type="number" id="config-working-days" class="mt-1 block w-full p-2 border rounded-md"></div>
-                                <div><label class="block text-sm font-medium">Imposto Sobre Faturamento (%)</label><input type="number" id="config-imposto-faturamento" class="mt-1 block w-full p-2 border rounded-md"></div>
-                                <div><label class="block text-sm font-medium">Taxa iFood (%)</label><input type="number" id="config-taxa-ifood-percentual" class="mt-1 block w-full p-2 border rounded-md"></div>
-                                <div><label class="block text-sm font-medium">Taxa Fixa iFood (R$)</label><input type="number" id="config-taxa-ifood-fixa" class="mt-1 block w-full p-2 border rounded-md"></div>
-                                <div><label class="block text-sm font-medium">Taxa Cartão (Canais Próprios, %)</label><input type="number" id="config-taxa-cartao" class="mt-1 block w-full p-2 border rounded-md"></div>
-                                <div><label class="block text-sm font-medium">Custo Adicional por Item para Viagem (R$)</label><input type="number" id="config-custo-adicional-delivery" class="mt-1 block w-full p-2 border rounded-md"></div>
-                                <div class="text-right mt-6"><button id="save-config-btn" class="bg-indigo-600 text-white font-semibold py-2 px-4 rounded-md hover:bg-indigo-700 flex items-center justify-center ml-auto btn-save-feedback"><i data-lucide="save" class="h-5 w-5 mr-2"></i><span class="btn-text">Salvar</span></button></div>
-                            </div>
-                        </details>
-                    </div>
-                </div>
-            </div>
-        </section>
-
-        <!-- PÁGINA DE RELATÓRIO DETALHADO -->
-        <section id="page-relatorio" class="page">
-             <header class="text-center mb-8">
-                <h1 class="text-3xl md:text-4xl font-bold text-slate-900">Relatório Detalhado do Dia</h1>
-                <div class="mt-4 flex justify-center gap-4">
-                    <button id="export-excel-btn" class="bg-green-600 text-white font-semibold py-2 px-4 rounded-md hover:bg-green-700 flex items-center">
-                        <i data-lucide="file-spreadsheet" class="h-5 w-5 mr-2"></i> Exportar para Excel
-                    </button>
-                    <button id="archive-day-btn" class="bg-purple-600 text-white font-semibold py-2 px-4 rounded-md hover:bg-purple-700 flex items-center">
-                        <i data-lucide="archive" class="h-5 w-5 mr-2"></i> Concluir e Arquivar Dia
-                    </button>
-                </div>
-            </header>
-            <div id="detailed-report-content" class="space-y-8">
-                <div class="text-center p-6 bg-white rounded-lg shadow"><p class="text-slate-600">Calcule o resultado final na aba "Fechamento do Dia" para gerar o relatório.</p></div>
-            </div>
-        </section>
-
-        <!-- PÁGINA DO HISTÓRICO -->
-        <section id="page-historico" class="page">
-             <header class="text-center mb-8">
-                <h1 class="text-3xl md:text-4xl font-bold text-slate-900">Histórico de Fechamentos</h1>
-                <p class="mt-2 text-md md:text-lg text-slate-600">Consulte os relatórios detalhados de dias anteriores.</p>
-            </header>
-            <div id="history-content" class="space-y-4">
-                <div class="text-center p-6 bg-white rounded-lg shadow"><p class="text-slate-600">Nenhum dia arquivado ainda.</p></div>
-            </div>
-        </section>
-
-        <!-- PÁGINA DO CARDÁPIO -->
-        <section id="page-cardapio" class="page">
-             <header class="text-center mb-8">
-                <h1 class="text-3xl md:text-4xl font-bold text-slate-900">Gerenciamento do Cardápio</h1>
-                <p class="mt-2 text-md md:text-lg text-slate-600">Adicione, edite e organize todos os seus produtos e preços.</p>
-            </header>
-            <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
-                <div class="lg:col-span-2 card">
-                    <h2 class="text-2xl font-semibold mb-4 border-b pb-2">Produtos Carregados</h2>
-                     <div id="cardapio-list-container" class="mt-2 text-sm text-slate-600 max-h-[70vh] overflow-y-auto p-2 space-y-2"></div>
-                </div>
-                <div class="space-y-8">
-                    <div class="card">
-                        <h2 class="text-2xl font-semibold mb-4 border-b pb-2">Adicionar Novo Produto</h2>
-                         <div class="space-y-4">
-                            <div><label class="text-sm font-medium">Nome do Produto <span class="text-xs text-gray-500">(use "!" no final para iFood)</span></label><input type="text" id="manual-product-name" class="w-full p-2 mt-1 border rounded-md"></div>
-                            <div><label class="text-sm font-medium">Custo de Produção (R$)</label><input type="number" id="manual-product-cost" class="w-full p-2 mt-1 border rounded-md"></div>
-                             <div><label class="text-sm font-medium">Preço de Venda (R$)</label><input type="number" id="manual-product-price" class="w-full p-2 mt-1 border rounded-md"></div>
-                            <div class="pt-2"><label class="flex items-center gap-2 text-sm font-medium"><input type="checkbox" id="manual-product-is-bebida" class="h-4 w-4 rounded">É uma bebida?</label></div>
-                        </div>
-                        <button id="manual-add-product-btn" class="w-full mt-4 bg-green-500 text-white font-semibold py-2 px-4 rounded-md hover:bg-green-600">Salvar Produto</button>
-                    </div>
-                     <div class="card">
-                        <h2 class="text-2xl font-semibold mb-4 border-b pb-2">Gerenciar Cardápio</h2>
-                        <div class="flex flex-col gap-3 mt-4">
-                            <button id="export-cardapio-csv-btn" class="w-full bg-blue-500 text-white font-semibold py-2 px-4 rounded-md hover:bg-blue-600 flex items-center justify-center">
-                                <i data-lucide="download" class="h-5 w-5 mr-2"></i> Exportar para CSV
-                            </button>
-                            <label for="daily-menu-csv-input" id="dropZoneCardapio" class="drop-zone flex justify-center w-full px-4 py-5 border-2 border-gray-300 border-dashed rounded-md cursor-pointer hover:border-indigo-400">
-                                <div class="text-center">
-                                    <i data-lucide="upload-cloud" class="mx-auto h-10 w-10 text-gray-400"></i>
-                                    <p class="mt-1 text-sm text-gray-600">Importar em Massa (CSV)</p>
-                                    <p class="text-xs text-gray-500">Arraste ou clique para substituir</p>
-                                </div>
-                            </label>
-                        </div>
-                        <input type="file" id="daily-menu-csv-input" class="hidden" accept=".csv, .xlsx">
-                        <div id="fileNameCardapio" class="mt-2 text-xs text-center text-slate-600 font-medium"></div>
-                         <button id="prepare-import-btn" class="w-full mt-4 bg-indigo-500 text-white font-semibold py-2 px-4 rounded-md hover:bg-indigo-600 hidden">Revisar e Preparar Importação</button>
-                    </div>
-                </div>
-            </div>
-        </section>
-    </main>
+            </section>
+        </main>
+    </div>
 
     <!-- Modal de Revisão de Importação do Cardápio -->
     <div id="import-review-modal" class="hidden fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-50">
@@ -475,9 +487,130 @@
         import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
         import { getAuth, signInAnonymously, signInWithCustomToken } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
         import { getFirestore, doc, getDoc, setDoc, onSnapshot } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+        
+        const getDefaultData = () => ({
+            config: {
+                monthlyExpenses: 2000, 
+                workingDays: 26,
+                impostoFaturamento: 6.0,
+                taxaIfoodPercentual: 15.2,
+                taxaIfoodFixa: 0.99, 
+                taxaCartao: 3.5, 
+                custoAdicionalDelivery: 2.00
+            },
+            cardapio: [],
+            history: {},
+        });
 
-        document.addEventListener('DOMContentLoaded', () => {
+        // --- INICIALIZAÇÃO E CONTROLE DE ESTADO ---
+        async function initializeAppSequence() {
             lucide.createIcons();
+
+            const appContainer = document.getElementById('app-container');
+            const loadingScreen = document.getElementById('loading-screen');
+
+            try {
+                // Aguarda as variáveis de configuração do Firebase estarem disponíveis
+                const firebaseConfig = await waitForConfig('__firebase_config');
+                const appId = await waitForConfig('__app_id');
+                const authToken = await waitForConfig('__initial_auth_token');
+                
+                // Inicializa o Firebase
+                const app = initializeApp(JSON.parse(firebaseConfig));
+                const db = getFirestore(app);
+                const auth = getAuth(app);
+
+                if (authToken) {
+                    await signInWithCustomToken(auth, authToken);
+                } else {
+                    await signInAnonymously(auth);
+                }
+                
+                const userId = auth.currentUser.uid;
+                const appDocRef = doc(db, 'artifacts', appId, 'users', userId, 'data', 'main');
+
+                // Inicia o listener e aguarda a primeira carga de dados
+                await new Promise((resolve, reject) => {
+                    const unsubscribe = onSnapshot(appDocRef, (doc) => {
+                        console.log("Dados recebidos do Firebase...");
+                        const defaults = getDefaultData();
+                        if (doc.exists()) {
+                            const remoteData = doc.data();
+                            window.appData = {
+                                config: { ...defaults.config, ...(remoteData.config || {}) },
+                                cardapio: Array.isArray(remoteData.cardapio) ? remoteData.cardapio.map(p => ({...p, isEditing: false})) : [],
+                                history: remoteData.history || {},
+                            };
+                        } else {
+                            console.log("Nenhum dado encontrado, criando documento inicial.");
+                            window.appData = defaults;
+                            setDoc(appDocRef, window.appData);
+                        }
+                        
+                        window.db = db;
+                        window.appDocRef = appDocRef;
+
+                        // Esconde a tela de loading e mostra o app
+                        loadingScreen.style.display = 'none';
+                        appContainer.classList.remove('loading');
+                        
+                        // Resolve a promessa após a primeira carga
+                        resolve();
+                        
+                        // Continua escutando por futuras atualizações
+                        // Esta parte agora só atualiza os dados, não mexe na UI diretamente
+                        onSnapshot(appDocRef, (doc) => {
+                            if (doc.exists()) {
+                                const remoteData = doc.data();
+                                window.appData.config = { ...defaults.config, ...(remoteData.config || {}) };
+                                window.appData.cardapio = Array.isArray(remoteData.cardapio) ? remoteData.cardapio.map(p => ({...p, isEditing: false})) : [];
+                                window.appData.history = remoteData.history || {};
+                                // Atualiza a UI se a página ativa precisar (ex: cardápio)
+                                if (document.getElementById('page-cardapio').classList.contains('active')) {
+                                    renderCardapioList();
+                                }
+                            }
+                        });
+                        unsubscribe(); // Para de escutar o listener inicial
+                    }, (error) => {
+                        console.error("Erro no listener do Firebase: ", error);
+                        reject(error);
+                    });
+                });
+                
+                main(); // Roda o resto da lógica do app
+
+            } catch (error) {
+                console.error("Falha na sequência de inicialização:", error);
+                loadingScreen.innerHTML = `<p class="text-red-600 font-bold">Falha ao conectar com a nuvem. Tente recarregar a página.</p>`;
+            }
+        }
+
+        function waitForConfig(variableName, timeout = 10000) {
+            return new Promise((resolve, reject) => {
+                let intervalTime = 100;
+                let elapsedTime = 0;
+                const interval = setInterval(() => {
+                    if (typeof window[variableName] !== 'undefined') {
+                        clearInterval(interval);
+                        resolve(window[variableName]);
+                    } else if (elapsedTime > timeout) {
+                        clearInterval(interval);
+                        reject(new Error(`Timeout esperando por ${variableName}`));
+                    }
+                    elapsedTime += intervalTime;
+                }, intervalTime);
+            });
+        }
+        
+        initializeAppSequence();
+        
+        // --- FUNÇÃO PRINCIPAL DO APP ---
+        function main() {
+            // (Todo o código anterior, de `document.addEventListener` até o final, entra aqui)
+            // As variáveis `db` e `appDocRef` agora são acessadas através de `window.db` e `window.appDocRef`
+            // E `appData` é `window.appData`
+            // --- INÍCIO DO CÓDIGO MOVIDO ---
             
             // --- ELEMENTOS DA UI ---
             const ui = {
@@ -582,23 +715,6 @@
             };
 
             // --- ESTADO E CONSTANTES ---
-            let db, auth, userId, appDocRef;
-            let dataLoaded = false;
-
-            const getDefaultData = () => ({
-                config: {
-                    monthlyExpenses: 2000, 
-                    workingDays: 26,
-                    impostoFaturamento: 6.0,
-                    taxaIfoodPercentual: 15.2,
-                    taxaIfoodFixa: 0.99, 
-                    taxaCartao: 3.5, 
-                    custoAdicionalDelivery: 2.00
-                },
-                cardapio: [],
-                history: {},
-            });
-            let appData = getDefaultData();
             let sessionData = {
                 pedidoFile: null,
                 itensFile: null,
@@ -637,10 +753,6 @@
 
             // --- NAVEGAÇÃO ---
             function showPage(pageId) {
-                if (!dataLoaded && pageId !== 'page-fechamento') {
-                    showNotification("Aguardando dados serem carregados da nuvem...", "warning");
-                    return;
-                }
                 ui.pages.forEach(p => p.classList.toggle('active', p.id === pageId));
                 ui.navLinks.forEach(link => {
                     link.classList.toggle('active', link.dataset.page === pageId);
@@ -656,9 +768,9 @@
 
             // --- GERENCIAMENTO DE DADOS (Firebase) ---
             async function saveData() {
-                if (!appDocRef) return;
+                if (!window.appDocRef) return;
                 try {
-                    await setDoc(appDocRef, appData);
+                    await setDoc(window.appDocRef, window.appData);
                 } catch (e) {
                     console.error("Erro ao salvar dados no Firebase:", e);
                     showNotification("Erro ao salvar dados na nuvem.", 'error');
@@ -669,7 +781,7 @@
             function updateUIFromData() {
                 Object.keys(ui.configInputs).forEach(key => {
                     if (ui.configInputs[key]) {
-                        ui.configInputs[key].value = appData.config[key] || '';
+                        ui.configInputs[key].value = window.appData.config[key] || '';
                     }
                 });
                 renderCardapioList();
@@ -678,7 +790,7 @@
 
             function populateCardapioDatalist() {
                 ui.cardapioDatalist.innerHTML = '';
-                appData.cardapio.forEach(item => {
+                window.appData.cardapio.forEach(item => {
                     const option = document.createElement('option');
                     option.value = item.nome;
                     ui.cardapioDatalist.appendChild(option);
@@ -724,9 +836,9 @@
             }
 
             function renderCardapioList() {
-                ui.cardapioListContainer.innerHTML = appData.cardapio.length === 0 
+                ui.cardapioListContainer.innerHTML = window.appData.cardapio.length === 0 
                     ? '<p class="italic text-slate-500 p-2">Nenhum produto cadastrado.</p>' 
-                    : appData.cardapio.map(renderCardapioItem).join('');
+                    : window.appData.cardapio.map(renderCardapioItem).join('');
                 populateCardapioDatalist();
                 lucide.createIcons();
             }
@@ -843,15 +955,15 @@
                     if (channelName === 'iFood') {
                         costsHTML = `
                             <div class="flex justify-between text-sm" title="CMV proporcional ao faturamento do canal"><span class="text-red-600">(-) CMV do Canal:</span> <span class="font-semibold text-red-600">${formatCurrency(channel.cmv)}</span></div>
-                            <div class="flex justify-between text-sm" title="${formatCurrency(channel.faturamento)} x ${appData.config.taxaIfoodPercentual}%"><span class="text-red-600">(-) Taxa %:</span> <span class="font-semibold text-red-600">${formatCurrency(channel.taxaPercentual)}</span></div>
-                            <div class="flex justify-between text-sm" title="${channel.pedidos} pedidos x ${formatCurrency(appData.config.taxaIfoodFixa)}"><span class="text-red-600">(-) Taxa Fixa:</span> <span class="font-semibold text-red-600">${formatCurrency(channel.taxaFixa)}</span></div>
-                            <div class="flex justify-between text-sm" title="${channel.itemsEmbalagem} itens x ${formatCurrency(appData.config.custoAdicionalDelivery)}"><span class="text-red-600">(-) Custo Embalagens:</span> <span class="font-semibold text-red-600">${formatCurrency(channel.custoEmbalagem)}</span></div>
+                            <div class="flex justify-between text-sm" title="${formatCurrency(channel.faturamento)} x ${window.appData.config.taxaIfoodPercentual}%"><span class="text-red-600">(-) Taxa %:</span> <span class="font-semibold text-red-600">${formatCurrency(channel.taxaPercentual)}</span></div>
+                            <div class="flex justify-between text-sm" title="${channel.pedidos} pedidos x ${formatCurrency(window.appData.config.taxaIfoodFixa)}"><span class="text-red-600">(-) Taxa Fixa:</span> <span class="font-semibold text-red-600">${formatCurrency(channel.taxaFixa)}</span></div>
+                            <div class="flex justify-between text-sm" title="${channel.itemsEmbalagem} itens x ${formatCurrency(window.appData.config.custoAdicionalDelivery)}"><span class="text-red-600">(-) Custo Embalagens:</span> <span class="font-semibold text-red-600">${formatCurrency(channel.custoEmbalagem)}</span></div>
                         `;
                     } else if (channelName === 'Anota Aí') {
                         costsHTML = `
                             <div class="flex justify-between text-sm" title="CMV proporcional ao faturamento do canal"><span class="text-red-600">(-) CMV do Canal:</span> <span class="font-semibold text-red-600">${formatCurrency(channel.cmv)}</span></div>
-                            <div class="flex justify-between text-sm" title="${formatCurrency(details.canaisProprios.faturamentoCartao)} x ${appData.config.taxaCartao}%"><span class="text-red-600">(-) Taxa Cartão:</span> <span class="font-semibold text-red-600">${formatCurrency(channel.taxaCartao)}</span></div>
-                            <div class="flex justify-between text-sm" title="${channel.itemsEmbalagem} itens x ${formatCurrency(appData.config.custoAdicionalDelivery)}"><span class="text-red-600">(-) Custo Embalagens:</span> <span class="font-semibold text-red-600">${formatCurrency(channel.custoEmbalagem)}</span></div>
+                            <div class="flex justify-between text-sm" title="${formatCurrency(details.canaisProprios.faturamentoCartao)} x ${window.appData.config.taxaCartao}%"><span class="text-red-600">(-) Taxa Cartão:</span> <span class="font-semibold text-red-600">${formatCurrency(channel.taxaCartao)}</span></div>
+                            <div class="flex justify-between text-sm" title="${channel.itemsEmbalagem} itens x ${formatCurrency(window.appData.config.custoAdicionalDelivery)}"><span class="text-red-600">(-) Custo Embalagens:</span> <span class="font-semibold text-red-600">${formatCurrency(channel.custoEmbalagem)}</span></div>
                         `;
                     }
                     
@@ -990,7 +1102,7 @@
             function renderHistory() {
                 const historyContainer = ui.historyContent;
                 historyContainer.innerHTML = '';
-                const sortedDates = Object.keys(appData.history).sort((a, b) => new Date(b) - new Date(a));
+                const sortedDates = Object.keys(window.appData.history).sort((a, b) => new Date(b) - new Date(a));
 
                 if (sortedDates.length === 0) {
                     historyContainer.innerHTML = '<div class="text-center p-6 bg-white rounded-lg shadow"><p class="text-slate-600">Nenhum dia arquivado ainda.</p></div>';
@@ -998,7 +1110,7 @@
                 }
 
                 sortedDates.forEach(date => {
-                    const report = appData.history[date];
+                    const report = window.appData.history[date];
                     const details = document.createElement('details');
                     details.className = 'card bg-white rounded-lg shadow-sm mb-4';
                     
@@ -1169,7 +1281,7 @@
                     }
 
                     const itensNaoEncontrados = new Set();
-                    const cardapioNomesNormalizados = appData.cardapio.map(p => normalizeString(p.nome));
+                    const cardapioNomesNormalizados = window.appData.cardapio.map(p => normalizeString(p.nome));
 
                     Object.values(soldItems).forEach(item => {
                         if (!cardapioNomesNormalizados.includes(normalizeString(item.name))) {
@@ -1197,7 +1309,7 @@
                     
                     // Verifica se existe algum item do Anota Aí que *poderia* ser para viagem
                     const hasPotentialTakeaway = Object.values(soldItems).some(item => {
-                        const itemCardapio = appData.cardapio.find(p => normalizeString(p.nome) === normalizeString(item.name));
+                        const itemCardapio = window.appData.cardapio.find(p => normalizeString(p.nome) === normalizeString(item.name));
                         return itemCardapio && !itemCardapio.eBebida && !item.name.includes('!');
                     });
 
@@ -1242,13 +1354,13 @@
 
             async function executeCalculation(takeawayItemsAnotaAiManual) {
                 try {
-                    const { config } = appData;
+                    const { config } = window.appData;
                     
                     const soldItemsData = getSoldItemsFromReviewedData();
                     const allSoldItems = Object.values(soldItemsData);
                     
                     const allSoldItemsWithDetails = allSoldItems.map(item => {
-                        const itemCardapio = appData.cardapio.find(p => normalizeString(p.nome) === normalizeString(item.name));
+                        const itemCardapio = window.appData.cardapio.find(p => normalizeString(p.nome) === normalizeString(item.name));
                         const cmv = (itemCardapio && !sessionData.ignoredItems.includes(normalizeString(item.name))) ? item.quantity * itemCardapio.custoProducao : 0;
                         const revenue = (itemCardapio && !sessionData.ignoredItems.includes(normalizeString(item.name))) ? item.quantity * itemCardapio.precoVenda : 0;
                         return {...item, cmv, revenue, eBebida: itemCardapio?.eBebida ?? false };
@@ -1417,7 +1529,7 @@
             ui.saveConfigBtn.addEventListener('click', () => {
                 Object.keys(ui.configInputs).forEach(key => {
                     if(ui.configInputs[key]) {
-                        appData.config[key] = ui.configInputs[key].value;
+                        window.appData.config[key] = ui.configInputs[key].value;
                     }
                 });
                 saveData();
@@ -1437,8 +1549,8 @@
                 if (!newProduct.nome || !newProduct.custoProducao || !newProduct.precoVenda) {
                     return showNotification("Preencha Nome, Custo e Preço.", "error");
                 }
-                appData.cardapio.push(newProduct);
-                appData.cardapio.sort((a,b) => a.nome.localeCompare(b.nome));
+                window.appData.cardapio.push(newProduct);
+                window.appData.cardapio.sort((a,b) => a.nome.localeCompare(b.nome));
                 saveData();
                 renderCardapioList();
                 Object.values(ui.productForm).forEach(el => {
@@ -1456,17 +1568,17 @@
                 
                 if (target.matches('.remove-cardapio-item-btn')) {
                     // Substituindo confirm nativo por uma verificação simples por enquanto
-                    // if (confirm(`Remover "${appData.cardapio[index].nome}" do cardápio?`)) {
-                        appData.cardapio.splice(index, 1);
+                    // if (confirm(`Remover "${window.appData.cardapio[index].nome}" do cardápio?`)) {
+                        window.appData.cardapio.splice(index, 1);
                         saveData();
                         renderCardapioList();
                         showNotification("Produto removido.", 'info');
                     // }
                 } else if (target.matches('.edit-cardapio-item-btn')) {
-                    appData.cardapio.forEach((p, i) => p.isEditing = i === index);
+                    window.appData.cardapio.forEach((p, i) => p.isEditing = i === index);
                     renderCardapioList();
                 } else if (target.matches('.cancel-edit-btn')) {
-                    appData.cardapio[index].isEditing = false;
+                    window.appData.cardapio[index].isEditing = false;
                     renderCardapioList();
                 } else if (target.matches('.save-edit-btn')) {
                     const itemContainer = target.closest('.p-4');
@@ -1477,8 +1589,8 @@
                         eBebida: itemContainer.querySelector('[data-field="eBebida"]').checked,
                         isEditing: false
                     };
-                    appData.cardapio[index] = editedProduct;
-                    appData.cardapio.sort((a,b) => a.nome.localeCompare(b.nome));
+                    window.appData.cardapio[index] = editedProduct;
+                    window.appData.cardapio.sort((a,b) => a.nome.localeCompare(b.nome));
                     saveData();
                     renderCardapioList();
                     showNotification("Produto atualizado!", 'success');
@@ -1486,12 +1598,12 @@
             });
 
             ui.exportCardapioCsvBtn.addEventListener('click', () => {
-                if (appData.cardapio.length === 0) {
+                if (window.appData.cardapio.length === 0) {
                     return showNotification("Nenhum produto no cardápio para exportar.", "warning");
                 }
                 
                 const headers = ["Nome do Produto", "Custo de Produção", "Preço de Venda", "É Bebida"];
-                const rows = appData.cardapio.map(p => [
+                const rows = window.appData.cardapio.map(p => [
                     `"${p.nome.replace(/"/g, '""')}"`, // Trata aspas no nome
                     p.custoProducao,
                     p.precoVenda,
@@ -1583,7 +1695,7 @@
                     };
                     if (product.nome) newProducts.push(product);
                 });
-                appData.cardapio = newProducts.sort((a,b) => a.nome.localeCompare(b.nome));
+                window.appData.cardapio = newProducts.sort((a,b) => a.nome.localeCompare(b.nome));
                 saveData();
                 renderCardapioList();
                 closeModal();
@@ -1602,7 +1714,7 @@
                     return showNotification("Informe um nome de item válido e uma quantidade.", "error");
                 }
 
-                const itemExists = appData.cardapio.some(p => normalizeString(p.nome) === normalizeString(name));
+                const itemExists = window.appData.cardapio.some(p => normalizeString(p.nome) === normalizeString(name));
                 if (!itemExists) {
                     return showNotification(`Item "${name}" não encontrado no cardápio. Cadastre-o primeiro.`, "error");
                 }
@@ -1651,8 +1763,8 @@
                         return showNotification('Informe Custo e Preço de Venda.', 'error');
                     }
 
-                    appData.cardapio.push(newProduct);
-                    appData.cardapio.sort((a,b) => a.nome.localeCompare(b.nome));
+                    window.appData.cardapio.push(newProduct);
+                    window.appData.cardapio.sort((a,b) => a.nome.localeCompare(b.nome));
                     saveData();
                     renderCardapioList();
                     formContainer.remove();
@@ -1682,7 +1794,7 @@
             ui.archiveDayBtn.addEventListener('click', () => {
                 if (sessionData.lastFullReport) {
                     const today = new Date().toISOString().split('T')[0];
-                    appData.history[today] = sessionData.lastFullReport;
+                    window.appData.history[today] = sessionData.lastFullReport;
                     saveData();
                     showNotification(`Fechamento do dia ${today} arquivado com sucesso!`, 'success');
                     resetDay();
@@ -1836,68 +1948,13 @@
              ui.reportReviewModal.cancelBtn.addEventListener('click', closeReportReviewModal);
 
 
-            // --- INICIALIZAÇÃO ---
-            async function initFirebase() {
-                const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
-                const firebaseConfig = JSON.parse(typeof __firebase_config !== 'undefined' ? __firebase_config : '{}');
-                
-                if (!firebaseConfig.apiKey) {
-                    console.error("Configuração do Firebase não encontrada. Usando localStorage como fallback.");
-                    showNotification("Modo offline. Os dados não serão salvos na nuvem.", "warning", 5000);
-                    // Futuramente, poderíamos implementar um fallback para localStorage aqui se necessário
-                    return;
-                }
-
-                try {
-                    const app = initializeApp(firebaseConfig);
-                    db = getFirestore(app);
-                    auth = getAuth(app);
-                    
-                    if (typeof __initial_auth_token !== 'undefined' && __initial_auth_token) {
-                        await signInWithCustomToken(auth, __initial_auth_token);
-                    } else {
-                        await signInAnonymously(auth);
-                    }
-                    userId = auth.currentUser.uid;
-                    appDocRef = doc(db, 'artifacts', appId, 'users', userId, 'data', 'main');
-
-                    // Listener para atualizações em tempo real
-                    onSnapshot(appDocRef, (doc) => {
-                        console.log("Dados recebidos do Firebase...");
-                        const defaults = getDefaultData();
-                        if (doc.exists()) {
-                            const remoteData = doc.data();
-                            appData = {
-                                config: { ...defaults.config, ...(remoteData.config || {}) },
-                                cardapio: Array.isArray(remoteData.cardapio) ? remoteData.cardapio.map(p => ({...p, isEditing: false})) : [],
-                                history: remoteData.history || {},
-                            };
-                        } else {
-                            // Se o documento não existe, cria com os dados padrão
-                            console.log("Nenhum dado encontrado, criando documento inicial.");
-                            appData = defaults;
-                            saveData(); // Salva os padrões no Firestore
-                        }
-                        
-                        dataLoaded = true;
-                        updateUIFromData();
-                    }, (error) => {
-                        console.error("Erro no listener do Firebase: ", error);
-                        showNotification("Erro ao conectar com o banco de dados.", "error");
-                    });
-
-                } catch(error) {
-                    console.error("Erro ao inicializar Firebase:", error);
-                    showNotification("Falha crítica na inicialização do banco de dados.", "error");
-                }
-            }
-            
-            function init() {
+            // --- INICIALIZAÇÃO DA UI ---
+            function initUI() {
                 ui.currentDateDisplay.textContent = new Date().toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit', year: 'numeric' });
                 const initialPage = window.location.hash.replace('#', '') || 'fechamento';
                 
+                updateUIFromData(); // Carrega os dados iniciais na UI
                 showPage(`page-${initialPage}`);
-                initFirebase(); // Inicia a conexão com o Firebase
                 
                 setupDropZone(ui.fechamento.pedidos.dropZone, ui.fechamento.pedidos.input, ui.fechamento.pedidos.fileName, file => { sessionData.pedidoFile = file; });
                 setupDropZone(ui.fechamento.itens.dropZone, ui.fechamento.itens.input, ui.fechamento.itens.fileName, file => { sessionData.itensFile = file; });
@@ -1914,8 +1971,11 @@
                 }, true); // Use captura para garantir que o evento seja pego
             }
             
-            init();
-        });
+            initUI();
+            
+            // --- FIM DO CÓDIGO MOVIDO ---
+        }
+
     </script>
 </body>
 </html>
