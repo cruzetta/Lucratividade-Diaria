@@ -772,28 +772,18 @@
             
             function renderSummary(report) {
                  const { summary, details } = report;
-                 const taxaServicoInfo = details.taxaServico > 0 
-                    ? `<div class="text-xs text-center text-slate-500 italic mt-2 border-t pt-2">
-                            Deste total, ${formatCurrency(details.taxaServico)} é referente à Taxa de Serviço.
-                        </div>`
-                    : '';
-
+                
                  ui.fechamento.summaryContainer.innerHTML = `
                     <div class="space-y-2">
                         <div class="flex justify-between items-center p-3 bg-blue-50 rounded-md text-lg">
-                            <span class="font-medium text-blue-800">Faturamento Bruto</span>
-                            <span class="font-bold text-blue-900">${formatCurrency(summary.faturamentoBruto)}</span>
+                            <span class="font-medium text-blue-800">Total Entradas</span>
+                            <span class="font-bold text-blue-900">${formatCurrency(details.totalEntradas)}</span>
                         </div>
-                        ${taxaServicoInfo}
+
                         <div class="text-sm space-y-1 pt-2">
-                            <div class="flex justify-between items-center"><span class="text-orange-700">(-) Custo dos Produtos (CMV)</span><span class="font-medium">${formatCurrency(summary.cmv)}</span></div>
-                            <div class="flex justify-between items-center"><span class="text-orange-700">(-) Imposto Sobre Faturamento</span><span class="font-medium">${formatCurrency(details.imposto.valor)}</span></div>
-                            <div class="flex justify-between items-center"><span class="text-orange-700">(-) Taxas de Canais e Pag.</span><span class="font-medium">${formatCurrency(summary.taxasTotais)}</span></div>
-                            <div class="flex justify-between items-center"><span class="text-orange-700">(-) Custo Adicional Viagem</span><span class="font-medium">${formatCurrency(summary.custoAdicionalViagem)}</span></div>
-                            <div class="flex justify-between items-center"><span class="text-orange-700">(-) Custo Fixo do Dia</span><span class="font-medium">${formatCurrency(details.custoFixo.diario)}</span></div>
-                            <div class="flex justify-between items-center"><span class="text-orange-700">(-) Custo com Diaristas</span><span class="font-medium">${formatCurrency(details.custoDiaristas.total)}</span></div>
-                            <div class="flex justify-between items-center"><span class="text-orange-700">(-) Despesas Extras</span><span class="font-medium">${formatCurrency(summary.custoExtras)}</span></div>
+                            <div class="flex justify-between items-center"><span class="text-orange-700">(-) Total Despesas</span><span class="font-medium">${formatCurrency(details.totalDespesas)}</span></div>
                         </div>
+
                         <div class="p-4 rounded-lg text-center transition-colors duration-300 mt-3 ${summary.lucroFinal >= 0 ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'}">
                             <p class="text-lg font-bold uppercase">(=) Resultado Final do Dia</p>
                             <p class="text-4xl font-extrabold mt-1">${formatCurrency(summary.lucroFinal)}</p>
@@ -956,6 +946,18 @@
                             ${createDetailRow('(-) Custo Fixo do Dia', `${formatCurrency(details.custoFixo.mensal)} / ${details.custoFixo.diasUteis} dias`, details.custoFixo.diario)}
                             ${createDetailRow('(-) Custo com Diaristas', `${details.custoDiaristas.quantidade} x ${formatCurrency(details.custoDiaristas.custoUnitario)}`, details.custoDiaristas.total)}
                             ${createDetailRow('(-) Despesas Extras', `${details.custoExtras.length} iten(s) lançado(s)`, summary.custoExtras)}
+                        </div>
+
+                        <!-- TOTAIS -->
+                        <div class="mt-6 p-4 border-y-2 border-slate-200 space-y-2">
+                            <div class="flex justify-between items-center text-lg font-bold">
+                                <span class="text-blue-800">Total de Entradas</span>
+                                <span class="text-blue-900">${formatCurrency(details.totalEntradas)}</span>
+                            </div>
+                            <div class="flex justify-between items-center text-lg font-bold">
+                                <span class="text-red-800">Total de Despesas</span>
+                                <span class="text-red-800">${formatCurrency(details.totalDespesas)}</span>
+                            </div>
                         </div>
 
                         <!-- RESULTADO FINAL -->
@@ -1349,7 +1351,10 @@
                     const custoExtras = sessionData.extraExpenses.reduce((sum, exp) => sum + exp.value, 0);
                     const custoFixoDia = parseValue(config.monthlyExpenses) / (parseInt(config.workingDays, 10) || 1);
                     const taxaServico = parseValue(ui.fechamento.taxaServicoInput.value);
-                    const lucroFinal = faturamentoBruto - cmv - taxasTotais - impostoFaturamentoValor - custoAdicionalViagem - custoFixoDia - custoDiaristas - custoExtras;
+
+                    const totalEntradas = faturamentoBruto + taxaServico;
+                    const totalDespesas = cmv + taxasTotais + impostoFaturamentoValor + custoAdicionalViagem + custoFixoDia + custoDiaristas + custoExtras;
+                    const lucroFinal = totalEntradas - totalDespesas;
                     
                     const report = {
                         summary: {
@@ -1359,6 +1364,8 @@
                             totalPedidos: sessionData.reviewedData.pedidos.filter(p => p[11]?.toLowerCase() !== 'cancelado' && p[0]).length,
                             totalItens: allSoldItems.reduce((acc, item) => acc + item.quantity, 0),
                             taxaServico,
+                            totalEntradas,
+                            totalDespesas,
                             ifood: {
                                 faturamento: faturamentoIfood,
                                 pedidos: numPedidosIfood,
