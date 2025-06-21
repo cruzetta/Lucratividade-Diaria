@@ -235,6 +235,14 @@
                                 <label for="taxaServicoInput" class="block text-sm font-medium text-slate-700">Valor Total da Taxa de Serviço (R$)</label>
                                 <input type="number" id="taxaServicoInput" placeholder="0.00" class="mt-1 block w-full rounded-md border-slate-300 shadow-sm p-2">
                             </div>
+
+                            <div class="card bg-slate-50 p-4 mt-6">
+                                <h4 class="text-md font-semibold text-slate-800 flex items-center mb-2"><i data-lucide="bike" class="h-4 w-4 mr-2"></i>Custo com Frete (Motoqueiro)</h4>
+                                <div>
+                                    <label for="frete-cost-input" class="block text-sm font-medium text-slate-700">Valor Total Pago no Dia (R$)</label>
+                                    <input type="number" id="frete-cost-input" placeholder="0.00" class="mt-1 block w-full rounded-md border-slate-300 shadow-sm p-2">
+                                </div>
+                            </div>
                             
                             <div class="card bg-slate-50 p-4 mt-6">
                                 <h4 class="text-md font-semibold text-slate-800 flex items-center mb-2"><i data-lucide="users" class="h-4 w-4 mr-2"></i>Custo com Diaristas</h4>
@@ -462,7 +470,12 @@
     <!-- Container para Notificações -->
     <div id="notification-container"></div>
 
-    <script>
+    <script type="module">
+        // Importações do Firebase
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
+        import { getAuth, signInAnonymously, signInWithCustomToken } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+        import { getFirestore, doc, getDoc, setDoc, onSnapshot } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+
         document.addEventListener('DOMContentLoaded', () => {
             lucide.createIcons();
             
@@ -547,6 +560,7 @@
                     taxaServicoInput: document.getElementById('taxaServicoInput'),
                     staffCountInput: document.getElementById('daily-staff-count'),
                     staffCostInput: document.getElementById('daily-staff-cost'),
+                    freteCostInput: document.getElementById('frete-cost-input'),
                     extraExpense: {
                         desc: document.getElementById('extra-expense-desc'),
                         value: document.getElementById('extra-expense-value'),
@@ -567,8 +581,10 @@
                 notificationContainer: document.getElementById('notification-container'),
             };
 
-            // --- CONSTANTES E ESTADO ---
-            const STORAGE_KEY = 'hybridClosingData_v28';
+            // --- ESTADO E CONSTANTES ---
+            let db, auth, userId, appDocRef;
+            let dataLoaded = false;
+
             const getDefaultData = () => ({
                 config: {
                     monthlyExpenses: 2000, 
@@ -621,6 +637,10 @@
 
             // --- NAVEGAÇÃO ---
             function showPage(pageId) {
+                if (!dataLoaded && pageId !== 'page-fechamento') {
+                    showNotification("Aguardando dados serem carregados da nuvem...", "warning");
+                    return;
+                }
                 ui.pages.forEach(p => p.classList.toggle('active', p.id === pageId));
                 ui.navLinks.forEach(link => {
                     link.classList.toggle('active', link.dataset.page === pageId);
@@ -634,50 +654,17 @@
                 window.location.hash = pageId.replace('page-','');
             }
 
-            // --- GERENCIAMENTO DE DADOS (localStorage) ---
-            function checkLocalStorage() {
+            // --- GERENCIAMENTO DE DADOS (Firebase) ---
+            async function saveData() {
+                if (!appDocRef) return;
                 try {
-                    const testKey = '_test_ls_';
-                    localStorage.setItem(testKey, testKey);
-                    localStorage.removeItem(testKey);
-                    return true;
+                    await setDoc(appDocRef, appData);
                 } catch (e) {
-                    showNotification("O salvamento automático está desativado. Seu navegador pode estar bloqueando-o.", 'error', 10000);
-                    return false;
-                }
-            }
-
-            function saveData() {
-                try {
-                    localStorage.setItem(STORAGE_KEY, JSON.stringify(appData));
-                } catch (e) {
-                    console.error("Erro ao salvar dados:", e);
-                    showNotification("Erro ao salvar dados no seu navegador.", 'error');
+                    console.error("Erro ao salvar dados no Firebase:", e);
+                    showNotification("Erro ao salvar dados na nuvem.", 'error');
                 }
             }
             
-            function loadData() {
-                const savedData = localStorage.getItem(STORAGE_KEY);
-                if (savedData) {
-                    try {
-                        const parsedData = JSON.parse(savedData);
-                        const defaults = getDefaultData();
-                        appData = {
-                            config: { ...defaults.config, ...(parsedData.config || {}) },
-                            cardapio: Array.isArray(parsedData.cardapio) 
-                                ? parsedData.cardapio.map(p => ({...p, isEditing: false})) 
-                                : [],
-                            history: parsedData.history || {},
-                        };
-                    } catch (e) {
-                        console.error("Erro ao carregar dados salvos:", e);
-                        appData = getDefaultData();
-                        showNotification("Dados salvos corrompidos. Começando do zero.", 'warning');
-                    }
-                }
-                updateUIFromData();
-            }
-
             // --- RENDERIZAÇÃO E ATUALIZAÇÃO DA UI ---
             function updateUIFromData() {
                 Object.keys(ui.configInputs).forEach(key => {
@@ -780,8 +767,9 @@
                             <span class="font-bold text-blue-900">${formatCurrency(details.totalEntradas)}</span>
                         </div>
 
-                        <div class="text-sm space-y-1 pt-2">
-                            <div class="flex justify-between items-center"><span class="text-orange-700">(-) Total Despesas</span><span class="font-medium">${formatCurrency(details.totalDespesas)}</span></div>
+                        <div class="flex justify-between items-center p-3 bg-red-50 rounded-md text-lg">
+                            <span class="font-medium text-red-800">Total Despesas</span>
+                            <span class="font-bold text-red-900">${formatCurrency(details.totalDespesas)}</span>
                         </div>
 
                         <div class="p-4 rounded-lg text-center transition-colors duration-300 mt-3 ${summary.lucroFinal >= 0 ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'}">
@@ -943,6 +931,7 @@
                             
                             ${createDetailRow('(-) Imposto Sobre Faturamento', `${details.imposto.percentual}% sobre ${formatCurrency(summary.faturamentoBruto)}`, details.imposto.valor)}
                             ${createDetailRow('(-) Custo Adicional Viagem', `${details.viagem.quantidade} itens x ${formatCurrency(details.viagem.custoUnitario)}`, summary.custoAdicionalViagem)}
+                            ${createDetailRow('(-) Custo com Frete (Motoqueiro)', `Valor informado manualmente`, details.custoFrete)}
                             ${createDetailRow('(-) Custo Fixo do Dia', `${formatCurrency(details.custoFixo.mensal)} / ${details.custoFixo.diasUteis} dias`, details.custoFixo.diario)}
                             ${createDetailRow('(-) Custo com Diaristas', `${details.custoDiaristas.quantidade} x ${formatCurrency(details.custoDiaristas.custoUnitario)}`, details.custoDiaristas.total)}
                             ${createDetailRow('(-) Despesas Extras', `${details.custoExtras.length} iten(s) lançado(s)`, summary.custoExtras)}
@@ -1078,6 +1067,7 @@
                 ui.fechamento.taxaServicoInput.value = '';
                 ui.fechamento.staffCountInput.value = '';
                 ui.fechamento.staffCostInput.value = '';
+                ui.fechamento.freteCostInput.value = '';
                 ui.fechamento.extraExpense.desc.value = '';
                 ui.fechamento.extraExpense.value.value = '';
                 ui.fechamento.manualItem.nameInput.value = '';
@@ -1345,15 +1335,17 @@
                     channels['Anota Aí'].lucroLivre = channels['Anota Aí'].faturamento - channels['Anota Aí'].cmv - channels['Anota Aí'].taxaCartao - channels['Anota Aí'].custoEmbalagem;
                     
                     // CÁLCULOS GERAIS
+                    const taxaServico = parseValue(ui.fechamento.taxaServicoInput.value);
+                    const totalEntradas = faturamentoBruto + taxaServico;
+
                     const taxasTotais = channels['iFood'].taxaPercentual + channels['iFood'].taxaFixa + channels['Anota Aí'].taxaCartao;
                     const impostoFaturamentoValor = faturamentoBruto * (parseValue(config.impostoFaturamento) / 100);
                     const custoDiaristas = parseValue(ui.fechamento.staffCountInput.value) * parseValue(ui.fechamento.staffCostInput.value);
+                    const custoFrete = parseValue(ui.fechamento.freteCostInput.value);
                     const custoExtras = sessionData.extraExpenses.reduce((sum, exp) => sum + exp.value, 0);
                     const custoFixoDia = parseValue(config.monthlyExpenses) / (parseInt(config.workingDays, 10) || 1);
-                    const taxaServico = parseValue(ui.fechamento.taxaServicoInput.value);
 
-                    const totalEntradas = faturamentoBruto + taxaServico;
-                    const totalDespesas = cmv + taxasTotais + impostoFaturamentoValor + custoAdicionalViagem + custoFixoDia + custoDiaristas + custoExtras;
+                    const totalDespesas = cmv + taxasTotais + impostoFaturamentoValor + custoAdicionalViagem + custoFixoDia + custoDiaristas + custoFrete + custoExtras;
                     const lucroFinal = totalEntradas - totalDespesas;
                     
                     const report = {
@@ -1397,6 +1389,7 @@
                                 custoUnitario: parseValue(ui.fechamento.staffCostInput.value),
                                 total: custoDiaristas,
                             },
+                            custoFrete: custoFrete,
                             custoExtras: sessionData.extraExpenses,
                         },
                         channels,
@@ -1714,6 +1707,7 @@
                     ["Taxas Totais", summary.taxasTotais],
                     ["Imposto Sobre Faturamento", sessionData.lastFullReport.details.imposto.valor],
                     ["Custo Adicional Viagem", sessionData.lastFullReport.summary.custoAdicionalViagem],
+                    ["Custo com Frete", sessionData.lastFullReport.details.custoFrete],
                     ["Custo Fixo do Dia", sessionData.lastFullReport.details.custoFixo.diario],
                     ["Custo com Diaristas", sessionData.lastFullReport.details.custoDiaristas.total],
                     ["Despesas Extras", summary.custoExtras],
@@ -1843,12 +1837,68 @@
 
 
             // --- INICIALIZAÇÃO ---
+            async function initFirebase() {
+                const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
+                const firebaseConfig = JSON.parse(typeof __firebase_config !== 'undefined' ? __firebase_config : '{}');
+                
+                if (!firebaseConfig.apiKey) {
+                    console.error("Configuração do Firebase não encontrada. Usando localStorage como fallback.");
+                    showNotification("Modo offline. Os dados não serão salvos na nuvem.", "warning", 5000);
+                    // Futuramente, poderíamos implementar um fallback para localStorage aqui se necessário
+                    return;
+                }
+
+                try {
+                    const app = initializeApp(firebaseConfig);
+                    db = getFirestore(app);
+                    auth = getAuth(app);
+                    
+                    if (typeof __initial_auth_token !== 'undefined' && __initial_auth_token) {
+                        await signInWithCustomToken(auth, __initial_auth_token);
+                    } else {
+                        await signInAnonymously(auth);
+                    }
+                    userId = auth.currentUser.uid;
+                    appDocRef = doc(db, 'artifacts', appId, 'users', userId, 'data', 'main');
+
+                    // Listener para atualizações em tempo real
+                    onSnapshot(appDocRef, (doc) => {
+                        console.log("Dados recebidos do Firebase...");
+                        const defaults = getDefaultData();
+                        if (doc.exists()) {
+                            const remoteData = doc.data();
+                            appData = {
+                                config: { ...defaults.config, ...(remoteData.config || {}) },
+                                cardapio: Array.isArray(remoteData.cardapio) ? remoteData.cardapio.map(p => ({...p, isEditing: false})) : [],
+                                history: remoteData.history || {},
+                            };
+                        } else {
+                            // Se o documento não existe, cria com os dados padrão
+                            console.log("Nenhum dado encontrado, criando documento inicial.");
+                            appData = defaults;
+                            saveData(); // Salva os padrões no Firestore
+                        }
+                        
+                        dataLoaded = true;
+                        updateUIFromData();
+                    }, (error) => {
+                        console.error("Erro no listener do Firebase: ", error);
+                        showNotification("Erro ao conectar com o banco de dados.", "error");
+                    });
+
+                } catch(error) {
+                    console.error("Erro ao inicializar Firebase:", error);
+                    showNotification("Falha crítica na inicialização do banco de dados.", "error");
+                }
+            }
+            
             function init() {
                 ui.currentDateDisplay.textContent = new Date().toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit', year: 'numeric' });
                 const initialPage = window.location.hash.replace('#', '') || 'fechamento';
-                checkLocalStorage();
+                
                 showPage(`page-${initialPage}`);
-                loadData();
+                initFirebase(); // Inicia a conexão com o Firebase
+                
                 setupDropZone(ui.fechamento.pedidos.dropZone, ui.fechamento.pedidos.input, ui.fechamento.pedidos.fileName, file => { sessionData.pedidoFile = file; });
                 setupDropZone(ui.fechamento.itens.dropZone, ui.fechamento.itens.input, ui.fechamento.itens.fileName, file => { sessionData.itensFile = file; });
                 setupDropZone(ui.fechamento.adicionais.dropZone, ui.fechamento.adicionais.input, ui.fechamento.adicionais.fileName, file => { sessionData.adicionaisFile = file; });
