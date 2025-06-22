@@ -1075,10 +1075,29 @@
                     
                     const summary = document.createElement('summary');
                     summary.className = 'cursor-pointer p-4 flex justify-between items-center font-semibold text-lg';
-                    summary.innerHTML = `
-                        <span>${new Date(date + 'T00:00:00').toLocaleDateString('pt-BR', { year: 'numeric', month: 'long', day: 'numeric' })}</span>
-                        <span class="${report.summary.lucroFinal >= 0 ? 'text-green-600' : 'text-red-600'}">${formatCurrency(report.summary.lucroFinal)}</span>
+                    
+                    const dateDisplay = document.createElement('div');
+                    dateDisplay.className = "flex-grow flex items-center gap-4";
+                    dateDisplay.innerHTML = `
+                        <span class="date-display">${new Date(date + 'T00:00:00').toLocaleDateString('pt-BR', { year: 'numeric', month: 'long', day: 'numeric' })}</span>
+                        <input type="date" class="date-input hidden p-1 border rounded-md text-base" value="${date}">
                     `;
+
+                    const actions = document.createElement('div');
+                    actions.className = 'history-actions flex items-center gap-2';
+                    actions.innerHTML = `
+                         <button class="edit-history-btn text-blue-500 hover:text-blue-700 p-1" data-date="${date}"><i data-lucide="calendar-edit" class="h-5 w-5"></i></button>
+                         <button class="save-history-btn hidden text-green-600 hover:text-green-800 p-1" data-date="${date}"><i data-lucide="check" class="h-5 w-5"></i></button>
+                         <button class="cancel-history-btn hidden text-red-600 hover:text-red-800 p-1" data-date="${date}"><i data-lucide="x" class="h-5 w-5"></i></button>
+                    `;
+                    
+                    const profitDisplay = document.createElement('span');
+                    profitDisplay.className = report.summary.lucroFinal >= 0 ? 'text-green-600' : 'text-red-600';
+                    profitDisplay.textContent = formatCurrency(report.summary.lucroFinal);
+
+                    summary.appendChild(dateDisplay);
+                    summary.appendChild(actions);
+                    summary.appendChild(profitDisplay);
                     
                     const contentDiv = document.createElement('div');
                     contentDiv.className = 'p-4 border-t border-gray-200 space-y-8';
@@ -1094,6 +1113,7 @@
                         }
                     });
                 });
+                lucide.createIcons();
             }
 
             // --- LÓGICA DE DRAG & DROP ---
@@ -1757,6 +1777,11 @@
                 if (!dateToSave) {
                     return showNotification("Por favor, selecione uma data para arquivar o relatório.", "warning");
                 }
+                 if(window.appData.history[dateToSave]) {
+                    if(!confirm(`Já existe um relatório para ${dateToSave}. Deseja sobrescrevê-lo?`)) {
+                        return;
+                    }
+                }
                 if (sessionData.lastFullReport) {
                     window.appData.history[dateToSave] = sessionData.lastFullReport;
                     saveData();
@@ -1814,6 +1839,54 @@
                 XLSX.writeFile(wb, `Relatorio_Fechamento_${dateString}.xlsx`);
 
                 showNotification("Exportação para Excel concluída.", "success");
+            });
+            
+             ui.historyContent.addEventListener('click', (e) => {
+                const editBtn = e.target.closest('.edit-history-btn');
+                const saveBtn = e.target.closest('.save-history-btn');
+                const cancelBtn = e.target.closest('.cancel-history-btn');
+                const summaryRow = e.target.closest('summary');
+
+                if (!summaryRow) return;
+
+                const dateDisplay = summaryRow.querySelector('.date-display');
+                const dateInput = summaryRow.querySelector('.date-input');
+                const actions = summaryRow.querySelector('.history-actions');
+
+                if (editBtn) {
+                    dateDisplay.classList.add('hidden');
+                    dateInput.classList.remove('hidden');
+                    actions.querySelector('.edit-history-btn').classList.add('hidden');
+                    actions.querySelector('.save-history-btn').classList.remove('hidden');
+                    actions.querySelector('.cancel-history-btn').classList.remove('hidden');
+                } else if (cancelBtn) {
+                    dateDisplay.classList.remove('hidden');
+                    dateInput.classList.add('hidden');
+                    actions.querySelector('.edit-history-btn').classList.remove('hidden');
+                    actions.querySelector('.save-history-btn').classList.add('hidden');
+                    actions.querySelector('.cancel-history-btn').classList.add('hidden');
+                } else if (saveBtn) {
+                    const originalDate = saveBtn.dataset.date;
+                    const newDate = dateInput.value;
+
+                    if (!newDate || newDate === originalDate) {
+                        cancelBtn.click(); // Reverte a UI se a data for inválida ou a mesma
+                        return;
+                    }
+                    
+                    if (window.appData.history[newDate]) {
+                        return showNotification(`Erro: A data ${newDate} já existe no histórico.`, 'error');
+                    }
+
+                    // Reatribui o relatório para a nova data e apaga o antigo
+                    window.appData.history[newDate] = window.appData.history[originalDate];
+                    delete window.appData.history[originalDate];
+                    
+                    saveData().then(() => {
+                        showNotification("Data do histórico atualizada com sucesso!", "success");
+                        renderHistory(); // Re-renderiza a lista com a data atualizada
+                    });
+                }
             });
 
             // --- LÓGICA DO MODAL DE REVISÃO DE RELATÓRIOS
