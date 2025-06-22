@@ -134,7 +134,7 @@
 <body class="bg-slate-100 text-slate-800">
     <div id="loading-screen" class="fixed inset-0 bg-slate-100 flex flex-col items-center justify-center z-[100]">
         <div class="animate-spin rounded-full h-16 w-16 border-b-2 border-indigo-600"></div>
-        <p class="mt-4 text-lg font-semibold text-slate-700">Conectando à nuvem...</p>
+        <p id="loading-message" class="mt-4 text-lg font-semibold text-slate-700">Conectando à nuvem...</p>
     </div>
 
     <div id="app-container" class="loading">
@@ -485,8 +485,8 @@
     <script type="module">
         // Importações do Firebase
         import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
-        import { getAuth, signInAnonymously, signInWithCustomToken } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
-        import { getFirestore, doc, getDoc, setDoc, onSnapshot } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+        import { getAuth, signInAnonymously, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+        import { getFirestore, doc, setDoc, onSnapshot, getDoc } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
         
         const getDefaultData = () => ({
             config: {
@@ -508,110 +508,73 @@
 
             const appContainer = document.getElementById('app-container');
             const loadingScreen = document.getElementById('loading-screen');
+            const loadingMessage = document.getElementById('loading-message');
+            
+            let firebaseConfig = {
+                apiKey: "AIzaSyAtLP2BCDSPdX-RXA-uU1cOi-i_-VpwUZU",
+                authDomain: "lucratividade-diaria.firebaseapp.com",
+                projectId: "lucratividade-diaria",
+                storageBucket: "lucratividade-diaria.appspot.com",
+                messagingSenderId: "76542676593",
+                appId: "1:76542676593:web:c46f2e8aac0c6ff73e15d0",
+                measurementId: "G-J3BDMTWWC9"
+            };
 
             try {
-                // Aguarda as variáveis de configuração do Firebase estarem disponíveis
-                const firebaseConfig = await waitForConfig('__firebase_config');
-                const appId = await waitForConfig('__app_id');
-                const authToken = await waitForConfig('__initial_auth_token');
-                
-                // Inicializa o Firebase
-                const app = initializeApp(JSON.parse(firebaseConfig));
+                const app = initializeApp(firebaseConfig);
                 const db = getFirestore(app);
                 const auth = getAuth(app);
 
-                if (authToken) {
-                    await signInWithCustomToken(auth, authToken);
-                } else {
-                    await signInAnonymously(auth);
-                }
-                
-                const userId = auth.currentUser.uid;
-                const appDocRef = doc(db, 'artifacts', appId, 'users', userId, 'data', 'main');
+                onAuthStateChanged(auth, async (user) => {
+                    if (user) {
+                        const userId = user.uid;
+                        const appDocRef = doc(db, 'businessData', userId); 
 
-                // Inicia o listener e aguarda a primeira carga de dados
-                await new Promise((resolve, reject) => {
-                    const unsubscribe = onSnapshot(appDocRef, (doc) => {
-                        console.log("Dados recebidos do Firebase...");
-                        const defaults = getDefaultData();
-                        if (doc.exists()) {
-                            const remoteData = doc.data();
-                            window.appData = {
-                                config: { ...defaults.config, ...(remoteData.config || {}) },
-                                cardapio: Array.isArray(remoteData.cardapio) ? remoteData.cardapio.map(p => ({...p, isEditing: false})) : [],
-                                history: remoteData.history || {},
-                            };
-                        } else {
-                            console.log("Nenhum dado encontrado, criando documento inicial.");
-                            window.appData = defaults;
-                            setDoc(appDocRef, window.appData);
-                        }
-                        
-                        window.db = db;
-                        window.appDocRef = appDocRef;
-
-                        // Esconde a tela de loading e mostra o app
-                        loadingScreen.style.display = 'none';
-                        appContainer.classList.remove('loading');
-                        
-                        // Resolve a promessa após a primeira carga
-                        resolve();
-                        
-                        // Continua escutando por futuras atualizações
-                        // Esta parte agora só atualiza os dados, não mexe na UI diretamente
-                        onSnapshot(appDocRef, (doc) => {
-                            if (doc.exists()) {
-                                const remoteData = doc.data();
-                                window.appData.config = { ...defaults.config, ...(remoteData.config || {}) };
-                                window.appData.cardapio = Array.isArray(remoteData.cardapio) ? remoteData.cardapio.map(p => ({...p, isEditing: false})) : [];
-                                window.appData.history = remoteData.history || {};
-                                // Atualiza a UI se a página ativa precisar (ex: cardápio)
-                                if (document.getElementById('page-cardapio').classList.contains('active')) {
-                                    renderCardapioList();
-                                }
+                        try {
+                            const docSnap = await getDoc(appDocRef);
+                            const defaults = getDefaultData();
+                            if (docSnap.exists()) {
+                                const remoteData = docSnap.data();
+                                window.appData = {
+                                    config: { ...defaults.config, ...(remoteData.config || {}) },
+                                    cardapio: Array.isArray(remoteData.cardapio) ? remoteData.cardapio.map(p => ({...p, isEditing: false})) : [],
+                                    history: remoteData.history || {},
+                                };
+                            } else {
+                                console.log("Nenhum dado encontrado, criando documento inicial.");
+                                window.appData = defaults;
+                                await setDoc(appDocRef, window.appData);
                             }
-                        });
-                        unsubscribe(); // Para de escutar o listener inicial
-                    }, (error) => {
-                        console.error("Erro no listener do Firebase: ", error);
-                        reject(error);
-                    });
+                            
+                            window.db = db;
+                            window.appDocRef = appDocRef;
+                            
+                            loadingScreen.style.display = 'none';
+                            appContainer.classList.remove('loading');
+                            
+                            main(); 
+                        } catch (error) {
+                             console.error("Erro no listener do Firebase: ", error);
+                            loadingMessage.textContent = "Erro de permissão. Verifique as regras do Firestore.";
+                            loadingMessage.classList.add('text-red-600');
+                        }
+
+                    } else {
+                         await signInAnonymously(auth);
+                    }
                 });
-                
-                main(); // Roda o resto da lógica do app
 
             } catch (error) {
                 console.error("Falha na sequência de inicialização:", error);
-                loadingScreen.innerHTML = `<p class="text-red-600 font-bold">Falha ao conectar com a nuvem. Tente recarregar a página.</p>`;
+                loadingMessage.textContent = "Falha ao conectar. Verifique a configuração e recarregue.";
+                loadingMessage.classList.add('text-red-600');
             }
         }
-
-        function waitForConfig(variableName, timeout = 10000) {
-            return new Promise((resolve, reject) => {
-                let intervalTime = 100;
-                let elapsedTime = 0;
-                const interval = setInterval(() => {
-                    if (typeof window[variableName] !== 'undefined') {
-                        clearInterval(interval);
-                        resolve(window[variableName]);
-                    } else if (elapsedTime > timeout) {
-                        clearInterval(interval);
-                        reject(new Error(`Timeout esperando por ${variableName}`));
-                    }
-                    elapsedTime += intervalTime;
-                }, intervalTime);
-            });
-        }
         
-        initializeAppSequence();
+        document.addEventListener('DOMContentLoaded', initializeAppSequence);
         
         // --- FUNÇÃO PRINCIPAL DO APP ---
         function main() {
-            // (Todo o código anterior, de `document.addEventListener` até o final, entra aqui)
-            // As variáveis `db` e `appDocRef` agora são acessadas através de `window.db` e `window.appDocRef`
-            // E `appData` é `window.appData`
-            // --- INÍCIO DO CÓDIGO MOVIDO ---
-            
             // --- ELEMENTOS DA UI ---
             const ui = {
                 pages: document.querySelectorAll('.page'),
