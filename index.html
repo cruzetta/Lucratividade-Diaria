@@ -246,14 +246,6 @@
                                     <label for="taxaServicoInput" class="block text-sm font-medium text-slate-700">Valor Total da Taxa de Serviço (R$)</label>
                                     <input type="number" id="taxaServicoInput" placeholder="0.00" class="mt-1 block w-full rounded-md border-slate-300 shadow-sm p-2">
                                 </div>
-    
-                                <div class="card bg-slate-50 p-4 mt-6">
-                                    <h4 class="text-md font-semibold text-slate-800 flex items-center mb-2"><i data-lucide="bike" class="h-4 w-4 mr-2"></i>Custo com Frete (Motoqueiro)</h4>
-                                    <div>
-                                        <label for="frete-cost-input" class="block text-sm font-medium text-slate-700">Valor Total Pago no Dia (R$)</label>
-                                        <input type="number" id="frete-cost-input" placeholder="0.00" class="mt-1 block w-full rounded-md border-slate-300 shadow-sm p-2">
-                                    </div>
-                                </div>
                                 
                                 <div class="card bg-slate-50 p-4 mt-6">
                                     <h4 class="text-md font-semibold text-slate-800 flex items-center mb-2"><i data-lucide="users" class="h-4 w-4 mr-2"></i>Custo com Diaristas</h4>
@@ -510,7 +502,7 @@
             const loadingScreen = document.getElementById('loading-screen');
             const loadingMessage = document.getElementById('loading-message');
             
-            let firebaseConfig = {
+            const firebaseConfig = {
                 apiKey: "AIzaSyAtLP2BCDSPdX-RXA-uU1cOi-i_-VpwUZU",
                 authDomain: "lucratividade-diaria.firebaseapp.com",
                 projectId: "lucratividade-diaria",
@@ -656,7 +648,6 @@
                     taxaServicoInput: document.getElementById('taxaServicoInput'),
                     staffCountInput: document.getElementById('daily-staff-count'),
                     staffCostInput: document.getElementById('daily-staff-cost'),
-                    freteCostInput: document.getElementById('frete-cost-input'),
                     extraExpense: {
                         desc: document.getElementById('extra-expense-desc'),
                         value: document.getElementById('extra-expense-value'),
@@ -921,12 +912,14 @@
                             <div class="flex justify-between text-sm" title="${formatCurrency(channel.faturamento)} x ${window.appData.config.taxaIfoodPercentual}%"><span class="text-red-600">(-) Taxa %:</span> <span class="font-semibold text-red-600">${formatCurrency(channel.taxaPercentual)}</span></div>
                             <div class="flex justify-between text-sm" title="${channel.pedidos} pedidos x ${formatCurrency(window.appData.config.taxaIfoodFixa)}"><span class="text-red-600">(-) Taxa Fixa:</span> <span class="font-semibold text-red-600">${formatCurrency(channel.taxaFixa)}</span></div>
                             <div class="flex justify-between text-sm" title="${channel.itemsEmbalagem} itens x ${formatCurrency(window.appData.config.custoAdicionalDelivery)}"><span class="text-red-600">(-) Custo Embalagens:</span> <span class="font-semibold text-red-600">${formatCurrency(channel.custoEmbalagem)}</span></div>
+                            <div class="flex justify-between text-sm" title="Somatório do frete nos pedidos do canal"><span class="text-red-600">(-) Custo Frete:</span> <span class="font-semibold text-red-600">${formatCurrency(channel.custoFrete)}</span></div>
                         `;
                     } else if (channelName === 'Anota Aí') {
                         costsHTML = `
                             <div class="flex justify-between text-sm" title="CMV proporcional ao faturamento do canal"><span class="text-red-600">(-) CMV do Canal:</span> <span class="font-semibold text-red-600">${formatCurrency(channel.cmv)}</span></div>
                             <div class="flex justify-between text-sm" title="${formatCurrency(details.canaisProprios.faturamentoCartao)} x ${window.appData.config.taxaCartao}%"><span class="text-red-600">(-) Taxa Cartão:</span> <span class="font-semibold text-red-600">${formatCurrency(channel.taxaCartao)}</span></div>
                             <div class="flex justify-between text-sm" title="${channel.itemsEmbalagem} itens x ${formatCurrency(window.appData.config.custoAdicionalDelivery)}"><span class="text-red-600">(-) Custo Embalagens:</span> <span class="font-semibold text-red-600">${formatCurrency(channel.custoEmbalagem)}</span></div>
+                             <div class="flex justify-between text-sm" title="Somatório do frete nos pedidos do canal"><span class="text-red-600">(-) Custo Frete:</span> <span class="font-semibold text-red-600">${formatCurrency(channel.custoFrete)}</span></div>
                         `;
                     }
                     
@@ -1006,7 +999,7 @@
                             
                             ${createDetailRow('(-) Imposto Sobre Faturamento', `${details.imposto.percentual}% sobre ${formatCurrency(summary.faturamentoBruto)}`, details.imposto.valor)}
                             ${createDetailRow('(-) Custo Adicional Viagem', `${details.viagem.quantidade} itens x ${formatCurrency(details.viagem.custoUnitario)}`, summary.custoAdicionalViagem)}
-                            ${createDetailRow('(-) Custo com Frete (Motoqueiro)', `Valor informado manualmente`, details.custoFrete)}
+                            ${createDetailRow('(-) Custo com Frete', `Somatório do frete dos relatórios`, details.custoFrete)}
                             ${createDetailRow('(-) Custo Fixo do Dia', `${formatCurrency(details.custoFixo.mensal)} / ${details.custoFixo.diasUteis} dias`, details.custoFixo.diario)}
                             ${createDetailRow('(-) Custo com Diaristas', `${details.custoDiaristas.quantidade} x ${formatCurrency(details.custoDiaristas.custoUnitario)}`, details.custoDiaristas.total)}
                             ${createDetailRow('(-) Despesas Extras', `${details.custoExtras.length} iten(s) lançado(s)`, summary.custoExtras)}
@@ -1142,7 +1135,6 @@
                 ui.fechamento.taxaServicoInput.value = '';
                 ui.fechamento.staffCountInput.value = '';
                 ui.fechamento.staffCostInput.value = '';
-                ui.fechamento.freteCostInput.value = '';
                 ui.fechamento.extraExpense.desc.value = '';
                 ui.fechamento.extraExpense.value.value = '';
                 ui.fechamento.manualItem.nameInput.value = '';
@@ -1333,8 +1325,8 @@
 
                     // Detalhamento por canal
                     const channels = {
-                        'iFood': { faturamento: 0, pedidos: 0, soldItems: [] },
-                        'Anota Aí': { faturamento: 0, pedidos: 0, soldItems: [], subChannels: {
+                        'iFood': { faturamento: 0, pedidos: 0, soldItems: [], custoFrete: 0 },
+                        'Anota Aí': { faturamento: 0, pedidos: 0, soldItems: [], custoFrete: 0, subChannels: {
                             'Consumo no local': { faturamento: 0, pedidos: 0 },
                             'Viagem/Retirada': { faturamento: 0, pedidos: 0 }
                         } },
@@ -1356,6 +1348,7 @@
                         if (status === 'cancelado') return; 
                         
                         const valorTotal = parseValue(columns[8]);
+                        const valorFrete = parseValue(columns[6]); // COLUNA G = ÍNDICE 6
                         const retirada = (columns[4] || '').trim().toLowerCase();
                         const condicaoPagamento = (columns[2] || '').trim().toLowerCase();
                         const origem = (columns[1] || '').trim();
@@ -1368,10 +1361,12 @@
                             channel = channels['iFood'];
                             faturamentoIfood += valorTotal;
                             numPedidosIfood++;
+                            channel.custoFrete += valorFrete;
                         } else {
                             channel = channels['Anota Aí'];
                             if (retirada === 'consumido no estabelecimento') subChannel = channel.subChannels['Consumo no local'];
                             else subChannel = channel.subChannels['Viagem/Retirada'];
+                            channel.custoFrete += valorFrete;
                         }
                         
                         channel.faturamento += valorTotal;
@@ -1401,26 +1396,26 @@
                     channels['iFood'].taxaFixa = numPedidosIfood * parseValue(config.taxaIfoodFixa);
                     channels['iFood'].custoEmbalagem = custoEmbalagemIfood;
                     channels['iFood'].itemsEmbalagem = itemsIfoodNonBeverage;
-                    channels['iFood'].lucroLivre = channels['iFood'].faturamento - channels['iFood'].cmv - channels['iFood'].taxaPercentual - channels['iFood'].taxaFixa - channels['iFood'].custoEmbalagem;
+                    channels['iFood'].lucroLivre = channels['iFood'].faturamento - channels['iFood'].cmv - channels['iFood'].taxaPercentual - channels['iFood'].taxaFixa - channels['iFood'].custoEmbalagem - channels['iFood'].custoFrete;
 
                     channels['Anota Aí'].cmv = channels['Anota Aí'].soldItems.reduce((sum, item) => sum + item.cmv, 0);
                     channels['Anota Aí'].taxaCartao = faturamentoCartaoProprio * (parseValue(config.taxaCartao) / 100);
                     channels['Anota Aí'].custoEmbalagem = custoEmbalagemAnotaAi;
                     channels['Anota Aí'].itemsEmbalagem = takeawayItemsAnotaAiManual;
-                    channels['Anota Aí'].lucroLivre = channels['Anota Aí'].faturamento - channels['Anota Aí'].cmv - channels['Anota Aí'].taxaCartao - channels['Anota Aí'].custoEmbalagem;
+                    channels['Anota Aí'].lucroLivre = channels['Anota Aí'].faturamento - channels['Anota Aí'].cmv - channels['Anota Aí'].taxaCartao - channels['Anota Aí'].custoEmbalagem - channels['Anota Aí'].custoFrete;
                     
                     // CÁLCULOS GERAIS
                     const taxaServico = parseValue(ui.fechamento.taxaServicoInput.value);
                     const totalEntradas = faturamentoBruto + taxaServico;
 
                     const taxasTotais = channels['iFood'].taxaPercentual + channels['iFood'].taxaFixa + channels['Anota Aí'].taxaCartao;
+                    const custoFreteTotal = channels['iFood'].custoFrete + channels['Anota Aí'].custoFrete;
                     const impostoFaturamentoValor = faturamentoBruto * (parseValue(config.impostoFaturamento) / 100);
                     const custoDiaristas = parseValue(ui.fechamento.staffCountInput.value) * parseValue(ui.fechamento.staffCostInput.value);
-                    const custoFrete = parseValue(ui.fechamento.freteCostInput.value);
                     const custoExtras = sessionData.extraExpenses.reduce((sum, exp) => sum + exp.value, 0);
                     const custoFixoDia = parseValue(config.monthlyExpenses) / (parseInt(config.workingDays, 10) || 1);
 
-                    const totalDespesas = cmv + taxasTotais + impostoFaturamentoValor + custoAdicionalViagem + custoFixoDia + custoDiaristas + custoFrete + custoExtras;
+                    const totalDespesas = cmv + taxasTotais + impostoFaturamentoValor + custoAdicionalViagem + custoFixoDia + custoDiaristas + custoFreteTotal + custoExtras;
                     const lucroFinal = totalEntradas - totalDespesas;
                     
                     const report = {
@@ -1464,7 +1459,7 @@
                                 custoUnitario: parseValue(ui.fechamento.staffCostInput.value),
                                 total: custoDiaristas,
                             },
-                            custoFrete: custoFrete,
+                            custoFrete: custoFreteTotal,
                             custoExtras: sessionData.extraExpenses,
                         },
                         channels,
@@ -1936,7 +1931,6 @@
             
             initUI();
             
-            // --- FIM DO CÓDIGO MOVIDO ---
         }
 
     </script>
