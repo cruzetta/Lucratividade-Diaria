@@ -158,7 +158,10 @@
             <!-- PÁGINA DE FECHAMENTO -->
             <section id="page-fechamento" class="page">
                 <header class="text-center mb-8">
-                    <h1 class="text-3xl md:text-4xl font-bold text-slate-900">Fechamento do Dia (<span id="current-date-display"></span>)</h1>
+                    <h1 class="text-3xl md:text-4xl font-bold text-slate-900">
+                        Fechamento do Dia 
+                        <input type="date" id="closing-date-input" class="text-3xl md:text-4xl font-bold text-slate-900 bg-transparent border-b-2 border-slate-300 focus:border-indigo-500 outline-none px-2">
+                    </h1>
                     <p class="mt-2 text-md md:text-lg text-slate-600">Siga os passos para um fechamento de caixa rápido e preciso.</p>
                 </header>
 
@@ -664,7 +667,7 @@
                 historyContent: document.getElementById('history-content'),
                 archiveDayBtn: document.getElementById('archive-day-btn'),
                 exportExcelBtn: document.getElementById('export-excel-btn'),
-                currentDateDisplay: document.getElementById('current-date-display'),
+                closingDateInput: document.getElementById('closing-date-input'),
                 notificationContainer: document.getElementById('notification-container'),
             };
 
@@ -1750,11 +1753,14 @@
             });
             
             ui.archiveDayBtn.addEventListener('click', () => {
+                const dateToSave = ui.closingDateInput.value;
+                if (!dateToSave) {
+                    return showNotification("Por favor, selecione uma data para arquivar o relatório.", "warning");
+                }
                 if (sessionData.lastFullReport) {
-                    const today = new Date().toISOString().split('T')[0];
-                    window.appData.history[today] = sessionData.lastFullReport;
+                    window.appData.history[dateToSave] = sessionData.lastFullReport;
                     saveData();
-                    showNotification(`Fechamento do dia ${today} arquivado com sucesso!`, 'success');
+                    showNotification(`Fechamento do dia ${dateToSave} arquivado com sucesso!`, 'success');
                     resetDay();
                 } else {
                     showNotification("Nenhum relatório para arquivar. Calcule o resultado primeiro.", 'warning');
@@ -1804,7 +1810,8 @@
                 const ws_items = XLSX.utils.aoa_to_sheet(ws_items_data);
                 XLSX.utils.book_append_sheet(wb, ws_items, "Itens Vendidos");
 
-                XLSX.writeFile(wb, `Relatorio_Fechamento_${new Date().toISOString().split('T')[0]}.xlsx`);
+                const dateString = ui.closingDateInput.value || new Date().toISOString().split('T')[0];
+                XLSX.writeFile(wb, `Relatorio_Fechamento_${dateString}.xlsx`);
 
                 showNotification("Exportação para Excel concluída.", "success");
             });
@@ -1908,7 +1915,7 @@
 
             // --- INICIALIZAÇÃO DA UI ---
             function initUI() {
-                ui.currentDateDisplay.textContent = new Date().toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit', year: 'numeric' });
+                ui.closingDateInput.value = new Date().toISOString().split('T')[0];
                 const initialPage = window.location.hash.replace('#', '') || 'fechamento';
                 
                 updateUIFromData(); // Carrega os dados iniciais na UI
