@@ -505,27 +505,40 @@
             const loadingScreen = document.getElementById('loading-screen');
             const loadingMessage = document.getElementById('loading-message');
             
-            // Usar variáveis globais para configuração do Firebase
-            const firebaseConfig = typeof __firebase_config !== 'undefined' ? JSON.parse(__firebase_config) : {};
-            const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
+            let firebaseConfig = typeof __firebase_config !== 'undefined' ? JSON.parse(__firebase_config) : null;
+            let useFallbackConfig = false;
 
-            if (Object.keys(firebaseConfig).length === 0) {
-                 loadingMessage.textContent = "Configuração do Firebase não encontrada. A aplicação não pode iniciar.";
-                 loadingMessage.classList.add('text-red-600');
-                 return;
+            if (!firebaseConfig || Object.keys(firebaseConfig).length === 0) {
+                console.warn("Configuração do Firebase do ambiente não encontrada. Usando configuração de fallback para demonstração.");
+                useFallbackConfig = true;
+                firebaseConfig = {
+                    apiKey: "AIzaSyAtLP2BCDSPdX-RXA-uU1cOi-i_-VpwUZU",
+                    authDomain: "lucratividade-diaria.firebaseapp.com",
+                    projectId: "lucratividade-diaria",
+                    storageBucket: "lucratividade-diaria.appspot.com",
+                    messagingSenderId: "76542676593",
+                    appId: "1:76542676593:web:c46f2e8aac0c6ff73e15d0",
+                    measurementId: "G-J3BDMTWWC9"
+                };
             }
+
+            const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
 
             try {
                 const app = initializeApp(firebaseConfig);
                 const db = getFirestore(app);
                 const auth = getAuth(app);
 
-                // Configurar o listener de autenticação
                 onAuthStateChanged(auth, async (user) => {
                     if (user) {
                         const userId = user.uid;
-                        // Caminho correto do documento no Firestore
-                        const appDocRef = doc(db, 'artifacts', appId, 'users', userId, 'data', 'appData'); 
+                        
+                        let appDocRef;
+                        if (useFallbackConfig) {
+                            appDocRef = doc(db, 'businessData', userId);
+                        } else {
+                            appDocRef = doc(db, 'artifacts', appId, 'users', userId, 'data', 'appData'); 
+                        }
 
                         try {
                             const docSnap = await getDoc(appDocRef);
@@ -561,8 +574,7 @@
                     }
                 });
                 
-                // Realizar o login
-                if (typeof __initial_auth_token !== 'undefined' && __initial_auth_token) {
+                if (!useFallbackConfig && typeof __initial_auth_token !== 'undefined' && __initial_auth_token) {
                     await signInWithCustomToken(auth, __initial_auth_token);
                 } else {
                     await signInAnonymously(auth);
