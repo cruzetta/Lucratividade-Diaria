@@ -1512,7 +1512,7 @@
 
                     const taxasTotais = channels['iFood'].taxaPercentual + channels['iFood'].taxaFixa + channels['Anota Aí'].taxaCartao;
                     const custoFreteTotal = channels['iFood'].custoFrete + channels['Anota Aí'].custoFrete;
-                    const impostoFaturamentoValor = faturamentoBruto * (parseValue(config.impostoFaturamento) / 100);
+                    const impostoFaturamentoValor = totalEntradas * (parseValue(config.impostoFaturamento) / 100);
                     const custoDiaristas = parseValue(ui.fechamento.staffCountInput.value) * parseValue(ui.fechamento.staffCostInput.value);
                     const custoExtras = sessionData.extraExpenses.reduce((sum, exp) => sum + exp.value, 0);
                     const custoFixoDia = parseValue(config.monthlyExpenses) / (parseInt(config.workingDays, 10) || 1);
