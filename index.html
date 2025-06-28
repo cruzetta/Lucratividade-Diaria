@@ -821,7 +821,10 @@
             async function saveData() {
                 if (!window.appDocRef) return;
                 try {
-                    await setDoc(window.appDocRef, window.appData);
+                    // Remove o estado de edição antes de salvar
+                    const cleanCardapio = window.appData.cardapio.map(({ isEditing, ...rest }) => rest);
+                    const dataToSave = { ...window.appData, cardapio: cleanCardapio };
+                    await setDoc(window.appDocRef, dataToSave);
                 } catch (e) {
                     console.error("Erro ao salvar dados no Firebase:", e);
                     showNotification("Erro ao salvar dados na nuvem.", 'error');
@@ -1070,7 +1073,7 @@
                         <!-- RECEITAS -->
                         <div class="mb-4">
                            <div class="p-4 bg-blue-50 rounded-lg">
-                                ${createDetailRow('(+) Faturamento Bruto', `${details.totalPedidos} pedidos geraram receita`, summary.faturamentoBruto, false)}
+                                ${createDetailRow('(+) Faturamento Bruto', `${details.totalPedidos} pedidos e vendas manuais`, summary.faturamentoBruto, false)}
                                 ${details.taxaServico > 0 ? createDetailRow('(+) Taxa de Serviço', 'Valor informado manualmente', details.taxaServico, false) : ''}
                            </div>
                         </div>
@@ -1133,14 +1136,16 @@
                                     <th class="p-2">Item</th>
                                     <th class="p-2 text-center">Quantidade</th>
                                     <th class="p-2 text-right">CMV Total</th>
+                                    <th class="p-2 text-right">Faturamento Total</th>
                                 </tr>
                             </thead>
                             <tbody>
                                 ${allSoldItems.map(item => `
                                     <tr class="border-b">
-                                        <td class="p-2 font-medium">${item.name}</td>
+                                        <td class="p-2 font-medium">${item.name.replace('!', '')}</td>
                                         <td class="p-2 text-center">${item.quantity}</td>
                                         <td class="p-2 text-right">${formatCurrency(item.cmv)}</td>
+                                        <td class="p-2 text-right">${formatCurrency(item.revenue)}</td>
                                     </tr>
                                 `).join('')}
                             </tbody>
@@ -1486,7 +1491,18 @@
                          }
                     });
                                             
-                    const faturamentoBruto = faturamentoBrutoRelatorio;
+                    // CORREÇÃO: Calcular faturamento dos itens manuais e somar aos totais
+                    let faturamentoManual = 0;
+                    sessionData.manualItems.forEach(manualItem => {
+                        const itemCardapio = window.appData.cardapio.find(p => normalizeString(p.nome) === normalizeString(manualItem.name));
+                        if (itemCardapio) {
+                            faturamentoManual += (itemCardapio.precoVenda || 0) * manualItem.quantity;
+                        }
+                    });
+
+                    const faturamentoBruto = faturamentoBrutoRelatorio + faturamentoManual;
+                    channels['Anota Aí'].faturamento += faturamentoManual;
+                    // FIM DA CORREÇÃO
                     
                     const itemsIfoodNonBeverage = channels.iFood.soldItems.reduce((sum, item) => !item.eBebida ? sum + item.quantity : sum, 0);
                     
@@ -1521,11 +1537,12 @@
                     const lucroFinal = totalEntradas - totalDespesas;
                     
                     const report = {
+                        date: ui.closingDateInput.value,
                         summary: {
                             faturamentoBruto, cmv, taxasTotais, lucroFinal, custoExtras, custoAdicionalViagem
                         },
                         details: {
-                            totalPedidos: sessionData.reviewedData.pedidos.filter(p => p[11]?.toLowerCase() !== 'cancelado' && p[0]).length,
+                            totalPedidos: sessionData.reviewedData.pedidos.filter(p => p[11]?.toLowerCase() !== 'cancelado' && p[0]).length + sessionData.manualItems.length,
                             totalItens: allSoldItems.reduce((acc, item) => acc + item.quantity, 0),
                             taxaServico,
                             totalEntradas,
@@ -1572,6 +1589,9 @@
 
                     renderSummary(report);
                     showNotification("Cálculo finalizado com sucesso!", 'success');
+                    // Rola a página para o resumo
+                    ui.fechamento.summaryContainer.scrollIntoView({ behavior: 'smooth', block: 'center' });
+
 
                 } catch (err) {
                     showNotification("Ocorreu um erro ao calcular o resultado final.", 'error');
@@ -1593,7 +1613,24 @@
                     }
                 });
                 saveData();
-                showNotification('Configurações salvas!', 'success');
+                const btn = ui.saveConfigBtn;
+                const icon = btn.querySelector('i');
+                const text = btn.querySelector('.btn-text');
+                const originalText = text.textContent;
+
+                btn.classList.add('bg-green-500', 'hover:bg-green-600');
+                btn.classList.remove('bg-indigo-600', 'hover:bg-indigo-700');
+                icon.setAttribute('data-lucide', 'check');
+                lucide.createIcons();
+                text.textContent = 'Salvo!';
+
+                setTimeout(() => {
+                    btn.classList.remove('bg-green-500', 'hover:bg-green-600');
+                    btn.classList.add('bg-indigo-600', 'hover:bg-indigo-700');
+                    icon.setAttribute('data-lucide', 'save');
+                    lucide.createIcons();
+                    text.textContent = originalText;
+                }, 2000);
             });
             
             ui.resetDayBtn.addEventListener('click', resetDay);
@@ -1662,14 +1699,14 @@
                 const headers = ["Nome do Produto", "Custo de Produção", "Preço de Venda", "É Bebida"];
                 const rows = window.appData.cardapio.map(p => [
                     `"${p.nome.replace(/"/g, '""')}"`, 
-                    p.custoProducao,
-                    p.precoVenda,
+                    String(p.custoProducao).replace('.',','),
+                    String(p.precoVenda).replace('.',','),
                     p.eBebida ? 'SIM' : 'NAO'
                 ]);
 
-                let csvContent = headers.join(',') + '\r\n';
+                let csvContent = headers.join(';') + '\r\n';
                 rows.forEach(rowArray => {
-                    let row = rowArray.join(',');
+                    let row = rowArray.join(';');
                     csvContent += row + '\r\n';
                 });
 
@@ -1870,20 +1907,26 @@
                     return showNotification("Nenhum relatório para exportar.", "warning");
                 }
                 
-                const { summary, channels, allSoldItems } = sessionData.lastFullReport;
+                const { summary, channels, allSoldItems, details } = sessionData.lastFullReport;
                 const wb = XLSX.utils.book_new();
 
                 const ws_summary_data = [
+                    ["Relatório de Fechamento - " + new Date(details.date + 'T00:00:00').toLocaleDateString('pt-BR')],
+                    [],
                     ["Resumo Financeiro Geral"],
-                    ["Faturamento Bruto", summary.faturamentoBruto],
-                    ["Custo dos Produtos (CMV)", summary.cmv],
-                    ["Taxas Totais", summary.taxasTotais],
-                    ["Imposto Sobre Faturamento", sessionData.lastFullReport.details.imposto.valor],
-                    ["Custo Adicional Viagem", sessionData.lastFullReport.summary.custoAdicionalViagem],
-                    ["Custo com Frete", sessionData.lastFullReport.details.custoFrete],
-                    ["Custo Fixo do Dia", sessionData.lastFullReport.details.custoFixo.diario],
-                    ["Custo com Diaristas", sessionData.lastFullReport.details.custoDiaristas.total],
-                    ["Despesas Extras", summary.custoExtras],
+                    ["(+) Faturamento Bruto", summary.faturamentoBruto],
+                    ["(+) Taxa de Serviço", details.taxaServico],
+                    ["(=) Total Entradas", details.totalEntradas],
+                    [],
+                    ["(-) Custo dos Produtos (CMV)", summary.cmv],
+                    ["(-) Taxas Totais (Canais e Pag.)", summary.taxasTotais],
+                    ["(-) Imposto Sobre Faturamento", details.imposto.valor],
+                    ["(-) Custo Adicional Viagem", summary.custoAdicionalViagem],
+                    ["(-) Custo com Frete", details.custoFrete],
+                    ["(-) Custo Fixo do Dia", details.custoFixo.diario],
+                    ["(-) Custo com Diaristas", details.custoDiaristas.total],
+                    ["(-) Despesas Extras", summary.custoExtras],
+                    ["(=) Total Despesas", details.totalDespesas],
                     [],
                     ["LUCRO LÍQUIDO", summary.lucroFinal]
                 ];
@@ -1898,9 +1941,9 @@
                 const ws_channels = XLSX.utils.aoa_to_sheet(ws_channels_data);
                 XLSX.utils.book_append_sheet(wb, ws_channels, "Canais");
 
-                const ws_items_data = [["Item", "Quantidade", "CMV Total"]];
+                const ws_items_data = [["Item", "Quantidade", "CMV Total", "Faturamento Total"]];
                 allSoldItems.forEach(item => {
-                    ws_items_data.push([item.name, item.quantity, item.cmv]);
+                    ws_items_data.push([item.name, item.quantity, item.cmv, item.revenue]);
                 });
                 const ws_items = XLSX.utils.aoa_to_sheet(ws_items_data);
                 XLSX.utils.book_append_sheet(wb, ws_items, "Itens Vendidos");
@@ -1957,9 +2000,7 @@
                     
                     saveData().then(() => {
                         showNotification("Data do histórico atualizada com sucesso!", "success");
-                        dateDisplay.textContent = new Date(newDate + 'T00:00:00').toLocaleDateString('pt-BR', { year: 'numeric', month: 'long', day: 'numeric' });
-                        actions.querySelectorAll('button').forEach(btn => btn.dataset.date = newDate);
-                        toggleEditMode(false);
+                        renderHistory();
                     }).catch(err => {
                         window.appData.history[originalDate] = window.appData.history[newDate];
                         delete window.appData.history[newDate];
@@ -1971,56 +2012,66 @@
 
             async function openReportReviewModal() {
                 const filesToReview = [
-                    { name: 'Pedidos', file: sessionData.pedidoFile },
-                    { name: 'Itens', file: sessionData.itensFile },
-                    { name: 'Adicionais', file: sessionData.adicionaisFile }
+                    { name: 'Pedidos', file: sessionData.pedidoFile, key: 'pedidos' },
+                    { name: 'Itens', file: sessionData.itensFile, key: 'itens' },
+                    { name: 'Adicionais', file: sessionData.adicionaisFile, key: 'adicionais' }
                 ];
 
-                if (filesToReview.every(f => f.file === null)) {
-                    return showNotification("Nenhum relatório importado para revisar.", "warning");
+                const hasFiles = filesToReview.some(f => f.file !== null);
+                const hasManualItems = sessionData.manualItems.length > 0;
+                
+                if (!hasFiles && !hasManualItems) {
+                    return showNotification("Nenhum relatório importado ou item manual para processar.", "warning");
                 }
+                
+                // Se houver arquivos, mostre o modal de revisão.
+                if(hasFiles) {
+                    ui.reportReviewModal.tabs.innerHTML = '';
+                    ui.reportReviewModal.tabContent.innerHTML = '';
 
-                ui.reportReviewModal.tabs.innerHTML = '';
-                ui.reportReviewModal.tabContent.innerHTML = '';
+                    let firstTab = true;
+                    for (const {name, file} of filesToReview) {
+                        if (file) {
+                            const tabId = `tab-${name.toLowerCase()}`;
+                            const tabButton = document.createElement('button');
+                            tabButton.className = 'tab-button';
+                            if(firstTab) {
+                                tabButton.classList.add('active');
+                                firstTab = false;
+                            }
+                            tabButton.textContent = name;
+                            tabButton.dataset.tab = tabId;
+                            ui.reportReviewModal.tabs.appendChild(tabButton);
 
-                let firstTab = true;
-                for (const {name, file} of filesToReview) {
-                    if (file) {
-                        const tabId = `tab-${name.toLowerCase()}`;
-                        const tabButton = document.createElement('button');
-                        tabButton.className = 'tab-button';
-                        if(firstTab) {
-                            tabButton.classList.add('active');
-                            firstTab = false;
-                        }
-                        tabButton.textContent = name;
-                        tabButton.dataset.tab = tabId;
-                        ui.reportReviewModal.tabs.appendChild(tabButton);
-
-                        const tabContent = document.createElement('div');
-                        tabContent.id = tabId;
-                        tabContent.className = 'tab-content';
-                        if(tabButton.classList.contains('active')) tabContent.classList.add('active');
-                        
-                        const csvText = await parseFile(file);
-                        const rows = parseCsvWithDelimiterDetection(csvText);
-                        
-                        let tableHTML = `<div class="max-h-[50vh] overflow-auto"><table class="w-full text-xs text-left" id="table-${tabId}"><tbody>`;
-                        rows.forEach((columns, rowIndex) => {
-                            tableHTML += `<tr data-row-index="${rowIndex}">`;
-                            columns.forEach((col, colIndex) => {
-                                tableHTML += `<td><input type="text" value="${col.trim()}" class="w-full p-1 border rounded-md bg-white"></td>`;
+                            const tabContent = document.createElement('div');
+                            tabContent.id = tabId;
+                            tabContent.className = 'tab-content';
+                            if(tabButton.classList.contains('active')) tabContent.classList.add('active');
+                            
+                            const csvText = await parseFile(file);
+                            const rows = parseCsvWithDelimiterDetection(csvText);
+                            
+                            let tableHTML = `<div class="max-h-[50vh] overflow-auto"><table class="w-full text-xs text-left" id="table-${tabId}"><tbody>`;
+                            rows.forEach((columns, rowIndex) => {
+                                tableHTML += `<tr data-row-index="${rowIndex}">`;
+                                columns.forEach((col, colIndex) => {
+                                    tableHTML += `<td><input type="text" value="${col.trim()}" class="w-full p-1 border rounded-md bg-white"></td>`;
+                                });
+                                tableHTML += `<td><button class="remove-row-btn text-red-500 p-1"><i data-lucide="trash-2" class="h-4 w-4"></i></button></td>`;
+                                tableHTML += `</tr>`;
                             });
-                            tableHTML += `<td><button class="remove-row-btn text-red-500 p-1"><i data-lucide="trash-2" class="h-4 w-4"></i></button></td>`;
-                            tableHTML += `</tr>`;
-                        });
-                        tableHTML += `</tbody></table></div>`;
-                        tabContent.innerHTML = tableHTML;
-                        ui.reportReviewModal.tabContent.appendChild(tabContent);
+                            tableHTML += `</tbody></table></div>`;
+                            tabContent.innerHTML = tableHTML;
+                            ui.reportReviewModal.tabContent.appendChild(tabContent);
+                        }
                     }
+                    lucide.createIcons();
+                    ui.reportReviewModal.container.classList.remove('hidden');
+                } else {
+                    // Se houver apenas itens manuais, pule a revisão de arquivos e processe direto.
+                    sessionData.reviewedData = { pedidos: [], itens: [], adicionais: [] };
+                    processarRelatorios();
                 }
-                lucide.createIcons();
-                ui.reportReviewModal.container.classList.remove('hidden');
             }
 
             ui.reportReviewModal.tabs.addEventListener('click', (e) => {
