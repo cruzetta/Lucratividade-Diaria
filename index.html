@@ -486,7 +486,7 @@
                     <button id="close-report-review-modal-btn" class="cursor-pointer z-50 p-2 -mr-2"><i data-lucide="x" class="h-6 w-6"></i></button>
                 </div>
                 <div class="mt-4">
-                    <p class="text-sm text-slate-600 mb-4">Confirme e edite os dados lidos dos seus relatórios. Linhas em branco ou com dados inválidos podem ser apagadas clicando no ícone da lixeira.</p>
+                    <p class="text-sm text-slate-600 mb-4">Confirme, edite ou adicione os dados dos seus relatórios. Linhas podem ser apagadas clicando no ícone da lixeira.</p>
                     <div class="border-b border-gray-200">
                         <nav id="report-review-tabs" class="-mb-px flex space-x-6" aria-label="Tabs"></nav>
                     </div>
@@ -2071,43 +2071,53 @@
 
                 let firstTab = true;
                 for (const {name, file} of filesToReview) {
-                    if (file) {
-                        const tabId = `tab-${name.toLowerCase()}`;
-                        const tabButton = document.createElement('button');
-                        tabButton.className = 'tab-button';
-                        if(firstTab) {
-                            tabButton.classList.add('active');
-                            firstTab = false;
-                        }
-                        tabButton.textContent = name;
-                        tabButton.dataset.tab = tabId;
-                        ui.reportReviewModal.tabs.appendChild(tabButton);
-
-                        const tabContent = document.createElement('div');
-                        tabContent.id = tabId;
-                        tabContent.className = 'tab-content';
-                        if(tabButton.classList.contains('active')) tabContent.classList.add('active');
-                        
-                        const csvText = await parseFile(file);
-                        const rows = parseCsvWithDelimiterDetection(csvText);
-                        
-                        let tableHTML = `<div class="max-h-[50vh] overflow-auto"><table class="w-full text-xs text-left" id="table-${tabId}"><tbody>`;
-                        rows.forEach((columns, rowIndex) => {
-                            tableHTML += `<tr data-row-index="${rowIndex}">`;
-                            columns.forEach((col, colIndex) => {
-                                tableHTML += `<td><input type="text" value="${col.trim()}" class="w-full p-1 border rounded-md bg-white"></td>`;
-                            });
-                            tableHTML += `<td><button class="remove-row-btn text-red-500 p-1"><i data-lucide="trash-2" class="h-4 w-4"></i></button></td>`;
-                            tableHTML += `</tr>`;
-                        });
-                        tableHTML += `</tbody></table></div>`;
-                        tabContent.innerHTML = tableHTML;
-                        ui.reportReviewModal.tabContent.appendChild(tabContent);
+                    const tabId = `tab-${name.toLowerCase()}`;
+                    const tabButton = document.createElement('button');
+                    tabButton.className = 'tab-button';
+                    if(firstTab) {
+                        tabButton.classList.add('active');
+                        firstTab = false;
                     }
+                    tabButton.textContent = name;
+                    tabButton.dataset.tab = tabId;
+                    ui.reportReviewModal.tabs.appendChild(tabButton);
+
+                    const tabContent = document.createElement('div');
+                    tabContent.id = tabId;
+                    tabContent.className = 'tab-content';
+                    if(tabButton.classList.contains('active')) tabContent.classList.add('active');
+                    
+                    const rows = file ? parseCsvWithDelimiterDetection(await parseFile(file)) : [];
+                    
+                    let tableHTML = `<div class="max-h-[50vh] overflow-auto"><table class="w-full text-xs text-left" id="table-${tabId}"><tbody>`;
+                    rows.forEach((columns, rowIndex) => {
+                        tableHTML += `<tr data-row-index="${rowIndex}">`;
+                        columns.forEach((col) => {
+                            tableHTML += `<td><input type="text" value="${col.trim()}" class="w-full p-1 border rounded-md bg-white"></td>`;
+                        });
+                        tableHTML += `<td><button class="remove-row-btn text-red-500 p-1"><i data-lucide="trash-2" class="h-4 w-4"></i></button></td>`;
+                        tableHTML += `</tr>`;
+                    });
+                    tableHTML += `</tbody></table></div>`;
+                    
+                    const defaultCols = { 'pedidos': 12, 'itens': 2, 'adicionais': 2 };
+                    const reportType = name.toLowerCase();
+
+                    tableHTML += `
+                        <div class="mt-4 text-right">
+                            <button class="add-row-btn bg-blue-500 text-white font-semibold py-1 px-3 rounded-md hover:bg-blue-600 text-sm" data-table-id="table-${tabId}" data-col-count="${defaultCols[reportType] || 2}">
+                                <i data-lucide="plus" class="inline-block h-4 w-4 mr-1"></i> Adicionar Linha Manualmente
+                            </button>
+                        </div>
+                    `;
+
+                    tabContent.innerHTML = tableHTML;
+                    ui.reportReviewModal.tabContent.appendChild(tabContent);
                 }
                 lucide.createIcons();
                 ui.reportReviewModal.container.classList.remove('hidden');
             }
+
 
             ui.reportReviewModal.tabs.addEventListener('click', (e) => {
                 const targetButton = e.target.closest('.tab-button');
@@ -2124,6 +2134,32 @@
                  const removeBtn = e.target.closest('.remove-row-btn');
                  if(removeBtn) {
                       removeBtn.closest('tr').remove();
+                 }
+
+                 const addBtn = e.target.closest('.add-row-btn');
+                 if(addBtn) {
+                    const tableId = addBtn.dataset.tableId;
+                    const table = document.getElementById(tableId);
+                    if (table) {
+                        const tbody = table.querySelector('tbody');
+                        let colCount = parseInt(addBtn.dataset.colCount, 10);
+                       
+                        const newRow = tbody.insertRow();
+                        
+                        let cellsHTML = '';
+                        for(let i = 0; i < colCount; i++) {
+                           cellsHTML += `<td><input type="text" value="" class="w-full p-1 border rounded-md bg-white focus:bg-indigo-50 focus:ring-1 focus:ring-indigo-500 outline-none"></td>`;
+                        }
+                        cellsHTML += `<td><button class="remove-row-btn text-red-500 p-1"><i data-lucide="trash-2" class="h-4 w-4"></i></button></td>`;
+                        newRow.innerHTML = cellsHTML;
+                        
+                        lucide.createIcons();
+                        
+                        const firstInput = newRow.querySelector('input');
+                        if (firstInput) {
+                            firstInput.focus();
+                        }
+                    }
                  }
             });
 
