@@ -389,7 +389,7 @@
             <section id="page-historico" class="page">
                  <header class="text-center mb-8">
                     <h1 class="text-3xl md:text-4xl font-bold text-slate-900">Histórico de Fechamentos</h1>
-                    <p class="mt-2 text-md md:text-lg text-slate-600">Consulte os relatórios detalhados de dias anteriores.</p>
+                    <p class="mt-2 text-md md:text-lg text-slate-600">Consulte os relatórios detalhados de dias anteriores, agrupados por mês.</p>
                 </header>
                 <div id="history-content" class="space-y-4">
                     <div class="text-center p-6 bg-white rounded-lg shadow"><p class="text-slate-600">Nenhum dia arquivado ainda.</p></div>
@@ -530,6 +530,18 @@
         </div>
     </div>
 
+    <!-- Modal de Confirmação Genérico -->
+    <div id="confirmation-modal" class="hidden fixed inset-0 bg-gray-600 bg-opacity-70 flex items-center justify-center z-[100]">
+        <div class="bg-white rounded-lg shadow-xl p-6 w-full max-w-sm">
+            <h3 id="confirmation-title" class="text-xl font-bold text-slate-800">Confirmar Ação</h3>
+            <p id="confirmation-message" class="mt-2 text-slate-600">Tem certeza de que deseja prosseguir?</p>
+            <div class="mt-6 flex justify-end gap-4">
+                <button id="confirmation-cancel-btn" class="bg-gray-200 text-gray-800 font-semibold py-2 px-4 rounded-md">Cancelar</button>
+                <button id="confirmation-confirm-btn" class="bg-red-600 text-white font-semibold py-2 px-4 rounded-md">Confirmar</button>
+            </div>
+        </div>
+    </div>
+
     <!-- Container para Notificações -->
     <div id="notification-container"></div>
 
@@ -537,7 +549,7 @@
         // Importações do Firebase
         import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
         import { getAuth, onAuthStateChanged, signOut, createUserWithEmailAndPassword, signInWithEmailAndPassword } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
-        import { getFirestore, doc, setDoc, onSnapshot, getDoc } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+        import { getFirestore, doc, setDoc, getDoc, updateDoc, deleteField } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
         
         const getDefaultData = () => ({
             config: {
@@ -732,6 +744,12 @@
                     confirmBtn: document.getElementById('confirm-takeaway-btn'),
                     closeBtn: document.getElementById('close-takeaway-modal-btn'),
                 },
+                confirmationModal: {
+                    container: document.getElementById('confirmation-modal'),
+                    message: document.getElementById('confirmation-message'),
+                    confirmBtn: document.getElementById('confirmation-confirm-btn'),
+                    cancelBtn: document.getElementById('confirmation-cancel-btn'),
+                },
                 fechamento: {
                     step1: document.getElementById('step-1-container'),
                     step2: document.getElementById('step-2-container'),
@@ -791,6 +809,8 @@
                 ignoredItems: [],
                 reviewedData: { pedidos: [], itens: [], adicionais: [] },
                 lastFullReport: null,
+                groupedHistory: {},
+                currentConfirmCallback: null,
             };
             
             const formatCurrency = (value) => !isNaN(parseFloat(value)) ? parseFloat(value).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' }) : 'R$ 0,00';
@@ -818,10 +838,19 @@
                 window.location.hash = pageId.replace('page-','');
             }
 
-            async function saveData() {
+            async function saveData(updates) {
                 if (!window.appDocRef) return;
                 try {
-                    await setDoc(window.appDocRef, window.appData);
+                    if (updates) {
+                        await updateDoc(window.appDocRef, updates);
+                    } else {
+                        const dataToSave = {
+                            config: window.appData.config,
+                            cardapio: window.appData.cardapio,
+                            history: window.appData.history,
+                        };
+                        await setDoc(window.appDocRef, dataToSave);
+                    }
                 } catch (e) {
                     console.error("Erro ao salvar dados no Firebase:", e);
                     showNotification("Erro ao salvar dados na nuvem.", 'error');
@@ -1153,65 +1182,105 @@
             function renderHistory() {
                 const historyContainer = ui.historyContent;
                 historyContainer.innerHTML = '';
-                const sortedDates = Object.keys(window.appData.history).sort((a, b) => new Date(b) - new Date(a));
+                const historyEntries = Object.entries(window.appData.history);
 
-                if (sortedDates.length === 0) {
+                if (historyEntries.length === 0) {
                     historyContainer.innerHTML = '<div class="text-center p-6 bg-white rounded-lg shadow"><p class="text-slate-600">Nenhum dia arquivado ainda.</p></div>';
                     return;
                 }
+                
+                const months = historyEntries.reduce((acc, [date, report]) => {
+                    const monthKey = date.substring(0, 7);
+                    if (!acc[monthKey]) {
+                        acc[monthKey] = { reports: [], total: 0 };
+                    }
+                    acc[monthKey].reports.push({ date, report });
+                    acc[monthKey].total += report.summary.lucroFinal;
+                    return acc;
+                }, {});
 
-                sortedDates.forEach(date => {
-                    const report = window.appData.history[date];
+                sessionData.groupedHistory = months;
+                
+                const sortedMonthKeys = Object.keys(months).sort().reverse();
+
+                sortedMonthKeys.forEach(monthKey => {
+                    const monthData = months[monthKey];
+                    const [year, month] = monthKey.split('-');
+                    const monthName = new Date(year, month - 1, 1).toLocaleString('pt-BR', { month: 'long', year: 'numeric' });
+                    
+                    const profitColor = monthData.total >= 0 ? 'text-green-600' : 'text-red-600';
+
                     const details = document.createElement('details');
-                    details.className = 'card bg-white rounded-lg shadow-sm mb-4';
+                    details.className = `card bg-white rounded-lg shadow-sm mb-4 overflow-hidden`;
+                    details.dataset.monthKey = monthKey;
                     
-                    const summary = document.createElement('summary');
-                    summary.className = 'cursor-pointer p-4 flex justify-between items-center font-semibold text-lg';
-                    
-                    const dateDisplayContainer = document.createElement('div');
-                    dateDisplayContainer.className = "flex-grow flex items-center gap-4";
-                    dateDisplayContainer.innerHTML = `
-                        <span class="date-display">${new Date(date + 'T00:00:00').toLocaleDateString('pt-BR', { year: 'numeric', month: 'long', day: 'numeric' })}</span>
-                        <input type="date" class="date-input hidden p-1 border rounded-md text-base" value="${date}">
+                    details.innerHTML = `
+                        <summary class="cursor-pointer p-4 flex justify-between items-center list-none">
+                            <div class="font-semibold text-lg capitalize">${monthName}</div>
+                            <div class="flex items-center gap-4">
+                                <span class="font-bold text-lg ${profitColor}">${formatCurrency(monthData.total)}</span>
+                                <i data-lucide="chevron-down" class="chevron-summary h-5 w-5 transition-transform"></i>
+                            </div>
+                        </summary>
+                        <div class="month-details-content p-4 border-t border-gray-200 bg-slate-50">
+                            <div class="text-center italic text-slate-500">A carregar dias...</div>
+                        </div>
                     `;
-
-                    const actionsContainer = document.createElement('div');
-                    actionsContainer.className = 'history-actions flex items-center gap-2';
-                     actionsContainer.innerHTML = `
-                          <button class="edit-history-btn flex items-center gap-2 text-sm bg-blue-100 text-blue-700 font-semibold py-1 px-3 rounded-md hover:bg-blue-200" data-date="${date}">
-                            <i data-lucide="calendar-edit" class="h-4 w-4"></i> Editar
-                          </button>
-                          <button class="save-history-btn hidden flex items-center gap-2 text-sm bg-green-100 text-green-700 font-semibold py-1 px-3 rounded-md hover:bg-green-200" data-date="${date}">
-                            <i data-lucide="check" class="h-4 w-4"></i> Salvar
-                          </button>
-                          <button class="cancel-history-btn hidden flex items-center gap-2 text-sm bg-red-100 text-red-700 font-semibold py-1 px-3 rounded-md hover:bg-red-200" data-date="${date}">
-                            <i data-lucide="x" class="h-4 w-4"></i> Cancelar
-                          </button>
-                    `;
-                    
-                    const profitDisplay = document.createElement('span');
-                    profitDisplay.className = `ml-4 ${report.summary.lucroFinal >= 0 ? 'text-green-600' : 'text-red-600'}`;
-                    profitDisplay.textContent = formatCurrency(report.summary.lucroFinal);
-
-                    summary.appendChild(dateDisplayContainer);
-                    summary.appendChild(actionsContainer);
-                    summary.appendChild(profitDisplay);
-                    
-                    const contentDiv = document.createElement('div');
-                    contentDiv.className = 'p-4 border-t border-gray-200 space-y-8';
-                    contentDiv.innerHTML = '<p class="text-slate-500 italic">Clique para expandir e ver os detalhes.</p>';
-
-                    details.appendChild(summary);
-                    details.appendChild(contentDiv);
                     historyContainer.appendChild(details);
-
-                    details.addEventListener('toggle', () => {
-                        if (details.open) {
-                            renderDetailedReport(report, contentDiv);
-                        }
-                    });
                 });
                 lucide.createIcons();
+            }
+
+            function renderMonthDetails(monthKey, targetContainer) {
+                 const monthData = sessionData.groupedHistory[monthKey];
+                 if (!monthData) return;
+
+                 monthData.reports.sort((a,b) => a.date.localeCompare(b.date));
+
+                 let contentHTML = `
+                    <div class="font-bold text-md mb-3 p-2 rounded-md flex justify-between items-center ${monthData.total >= 0 ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'}">
+                        <span>Saldo Parcial do Mês:</span>
+                        <span id="month-total-${monthKey}">${formatCurrency(monthData.total)}</span>
+                    </div>
+                    <div class="space-y-2">`;
+                 
+                 monthData.reports.forEach(({date, report}) => {
+                     const dayProfit = report.summary.lucroFinal;
+                     const dayProfitColor = dayProfit >= 0 ? 'text-green-600' : 'text-red-600';
+                     const formattedDate = new Date(date + 'T00:00:00').toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit' });
+
+                     contentHTML += `
+                        <div class="day-container bg-white rounded-md border" data-original-date="${date}">
+                            <div class="day-summary p-3 flex justify-between items-center gap-2">
+                                <div class="date-section flex-grow">
+                                    <span class="font-medium text-slate-700 view-mode">${formattedDate}</span>
+                                    <input type="date" value="${date}" class="date-input p-1 border rounded-md text-base edit-mode hidden">
+                                </div>
+                                <div class="profit-display font-bold ${dayProfitColor}">${formatCurrency(dayProfit)}</div>
+                                <div class="actions-view-mode flex items-center gap-1 ml-2">
+                                    <button class="view-day-details-btn text-blue-500 hover:text-blue-700 p-1 rounded-full hover:bg-blue-100" title="Ver Detalhes"><i data-lucide="eye" class="h-4 w-4"></i></button>
+                                    <button class="edit-day-btn text-yellow-600 hover:text-yellow-700 p-1 rounded-full hover:bg-yellow-100" title="Editar Data"><i data-lucide="edit" class="h-4 w-4"></i></button>
+                                    <button class="delete-day-btn text-red-500 hover:text-red-700 p-1 rounded-full hover:bg-red-100" title="Excluir Dia"><i data-lucide="trash-2" class="h-4 w-4"></i></button>
+                                </div>
+                                <div class="actions-edit-mode hidden flex items-center gap-2 ml-2">
+                                    <button class="save-day-btn bg-green-500 text-white p-1 rounded-md" title="Salvar"><i data-lucide="check" class="h-4 w-4"></i></button>
+                                    <button class="cancel-edit-day-btn bg-gray-500 text-white p-1 rounded-md" title="Cancelar"><i data-lucide="x" class="h-4 w-4"></i></button>
+                                </div>
+                            </div>
+                            <div class="day-report-content hidden p-4 border-t border-gray-200"></div>
+                        </div>
+                     `;
+                 });
+                 
+                 contentHTML += '</div>';
+                 targetContainer.innerHTML = contentHTML;
+                 lucide.createIcons();
+            }
+
+            function showConfirmationModal(message, onConfirm) {
+                ui.confirmationModal.message.textContent = message;
+                ui.confirmationModal.container.classList.remove('hidden');
+                sessionData.currentConfirmCallback = onConfirm;
             }
 
             function setupDropZone(dropZoneEl, inputEl, fileNameEl, fileSetter, buttonToShow) {
@@ -1241,7 +1310,7 @@
 
             function resetDay() {
                 sessionData = {
-                    pedidoFile: null, itensFile: null, adicionaisFile: null, menuFile: null, manualItems: [], extraExpenses: [], ignoredItems: [], reviewedData: { pedidos: [], itens: [], adicionais: [] }, lastFullReport: null
+                    pedidoFile: null, itensFile: null, adicionaisFile: null, menuFile: null, manualItems: [], extraExpenses: [], ignoredItems: [], reviewedData: { pedidos: [], itens: [], adicionais: [] }, lastFullReport: null, groupedHistory: {}, currentConfirmCallback: null,
                 };
                 
                 ui.fechamento.pedidos.fileName.textContent = 'Nenhum arquivo.';
@@ -1857,8 +1926,9 @@
                  }
                 if (sessionData.lastFullReport) {
                     window.appData.history[dateToSave] = sessionData.lastFullReport;
-                    saveData();
-                    showNotification(`Fechamento do dia ${dateToSave} arquivado com sucesso!`, 'success');
+                    saveData({[`history.${dateToSave}`]: sessionData.lastFullReport});
+                    renderHistory();
+                    showNotification(`Fechamento do dia ${new Date(dateToSave+'T00:00:00').toLocaleDateString('pt-BR')} arquivado com sucesso!`, 'success');
                     resetDay();
                 } else {
                     showNotification("Nenhum relatório para arquivar. Calcule o resultado primeiro.", 'warning');
@@ -1912,62 +1982,78 @@
             });
             
             ui.historyContent.addEventListener('click', (e) => {
-                const summaryRow = e.target.closest('summary');
-                if (!summaryRow) return;
-
-                const editBtn = e.target.closest('.edit-history-btn');
-                const saveBtn = e.target.closest('.save-history-btn');
-                const cancelBtn = e.target.closest('.cancel-history-btn');
-
-                const dateDisplay = summaryRow.querySelector('.date-display');
-                const dateInput = summaryRow.querySelector('.date-input');
-                const actions = summaryRow.querySelector('.history-actions');
-                const originalDate = actions.querySelector('button').dataset.date;
-
-                const toggleEditMode = (isEditing) => {
-                    dateDisplay.classList.toggle('hidden', isEditing);
-                    dateInput.classList.toggle('hidden', !isEditing);
-                    actions.querySelector('.edit-history-btn').classList.toggle('hidden', isEditing);
-                    actions.querySelector('.save-history-btn').classList.toggle('hidden', !isEditing);
-                    actions.querySelector('.cancel-history-btn').classList.toggle('hidden', !isEditing);
-                };
-
-                if (editBtn) {
-                    e.preventDefault(); 
-                    toggleEditMode(true);
-                } else if (cancelBtn) {
-                    e.preventDefault();
-                    dateInput.value = originalDate;
-                    toggleEditMode(false);
-                } else if (saveBtn) {
-                    e.preventDefault();
-                    const newDate = dateInput.value;
-
-                    if (!newDate || newDate === originalDate) {
-                        toggleEditMode(false);
+                const target = e.target;
+                const dayContainer = target.closest('.day-container');
+                
+                // Month expand/collapse
+                const summary = target.closest('summary');
+                if (summary) {
+                    const details = summary.parentElement;
+                    if (details.open) { // It's about to close
                         return;
                     }
-                    
-                    if (window.appData.history[newDate]) {
-                        return showNotification(`Erro: A data ${newDate} já existe no histórico.`, 'error');
+                    // It's about to open
+                    const contentDiv = details.querySelector('.month-details-content');
+                    if (contentDiv && contentDiv.querySelector('.italic')) {
+                        const monthKey = details.dataset.monthKey;
+                        renderMonthDetails(monthKey, contentDiv);
                     }
+                    return;
+                }
+                if (!dayContainer) return;
 
-                    window.appData.history[newDate] = window.appData.history[originalDate];
-                    delete window.appData.history[originalDate];
+                const originalDate = dayContainer.dataset.originalDate;
+
+                // --- Day actions ---
+                const toggleEditMode = (isEditing) => {
+                    dayContainer.querySelector('.view-mode').classList.toggle('hidden', isEditing);
+                    dayContainer.querySelector('.actions-view-mode').classList.toggle('hidden', isEditing);
+                    dayContainer.querySelector('.edit-mode').classList.toggle('hidden', !isEditing);
+                    dayContainer.querySelector('.actions-edit-mode').classList.toggle('hidden', !isEditing);
+                };
+                
+                if (target.closest('.view-day-details-btn')) {
+                    const reportContent = dayContainer.querySelector('.day-report-content');
+                    const isHidden = reportContent.classList.toggle('hidden');
+                    if (!isHidden) { // about to open
+                         renderDetailedReport(window.appData.history[originalDate], reportContent);
+                         lucide.createIcons();
+                    }
+                } else if (target.closest('.edit-day-btn')) {
+                    toggleEditMode(true);
+                } else if (target.closest('.cancel-edit-day-btn')) {
+                    dayContainer.querySelector('.date-input').value = originalDate; // Reset date
+                    toggleEditMode(false);
+                } else if (target.closest('.delete-day-btn')) {
+                    showConfirmationModal(`Tem a certeza que quer excluir o relatório do dia ${new Date(originalDate+'T00:00:00').toLocaleDateString('pt-BR')}? Esta ação não pode ser desfeita.`, () => {
+                        const dateToDelete = dayContainer.dataset.originalDate;
+                        delete window.appData.history[dateToDelete];
+                        saveData({[`history.${dateToDelete}`]: deleteField() });
+                        renderHistory();
+                        showNotification('Relatório do dia excluído com sucesso.', 'success');
+                    });
+                } else if (target.closest('.save-day-btn')) {
+                    const newDate = dayContainer.querySelector('.date-input').value;
+                    const oldDate = dayContainer.dataset.originalDate;
+
+                    if (!newDate) return showNotification("A nova data não pode estar vazia.", "error");
+                    if (newDate === oldDate) return toggleEditMode(false); // No change
+                    if (window.appData.history[newDate]) return showNotification(`A data ${newDate} já existe no histórico.`, "error");
                     
-                    saveData().then(() => {
-                        showNotification("Data do histórico atualizada com sucesso!", "success");
-                        dateDisplay.textContent = new Date(newDate + 'T00:00:00').toLocaleDateString('pt-BR', { year: 'numeric', month: 'long', day: 'numeric' });
-                        actions.querySelectorAll('button').forEach(btn => btn.dataset.date = newDate);
-                        toggleEditMode(false);
-                    }).catch(err => {
-                        window.appData.history[originalDate] = window.appData.history[newDate];
-                        delete window.appData.history[newDate];
-                        showNotification("Falha ao salvar a alteração.", "error");
+                    const reportData = window.appData.history[oldDate];
+                    window.appData.history[newDate] = reportData;
+                    delete window.appData.history[oldDate];
+
+                    const updates = {};
+                    updates[`history.${oldDate}`] = deleteField();
+                    updates[`history.${newDate}`] = reportData;
+
+                    saveData(updates).then(() => {
+                         showNotification("Data do relatório atualizada com sucesso.", "success");
+                         renderHistory(); // Re-render everything to ensure correct grouping and sorting
                     });
                 }
             });
-
 
             async function openReportReviewModal() {
                 const filesToReview = [
@@ -2063,6 +2149,19 @@
              const closeReportReviewModal = () => ui.reportReviewModal.container.classList.add('hidden');
              ui.reportReviewModal.closeBtn.addEventListener('click', closeReportReviewModal);
              ui.reportReviewModal.cancelBtn.addEventListener('click', closeReportReviewModal);
+            
+            ui.confirmationModal.cancelBtn.addEventListener('click', () => {
+                ui.confirmationModal.container.classList.add('hidden');
+                sessionData.currentConfirmCallback = null;
+            });
+            ui.confirmationModal.confirmBtn.addEventListener('click', () => {
+                if (sessionData.currentConfirmCallback) {
+                    sessionData.currentConfirmCallback();
+                }
+                ui.confirmationModal.container.classList.add('hidden');
+                sessionData.currentConfirmCallback = null;
+            });
+
 
             function initUI() {
                 ui.closingDateInput.value = new Date().toISOString().split('T')[0];
